@@ -4,6 +4,7 @@
         "gui/closest_consumer/closest_consumer.script.tl",
         "gui/closest_consumer/industry_plugin.res.lua",
         "gui/closest_consumer/nearest.d.tl",
+        "gui/closest_consumer/nearest.tl",
         "gui/closest_consumer/rank.d.tl",
         "gui/closest_consumer/rank.tl",
         "gui/closest_consumer/warehouse_plugin.res.lua"
