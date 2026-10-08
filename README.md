@@ -76,7 +76,8 @@ to re-run `install.sh`, unless you added or removed files: then run
    - [ ] An empty warehouse lists consumers for the cargo its slots accept.
    - [ ] A pure consumer (e.g. a power plant) shows no card.
    - [ ] The arrow toggle shows exactly one flow arrow and frames both ends; switching rows moves it.
-   - [ ] The arrow is animated for a consumer already being supplied, and faint and static otherwise.
+   - [ ] For an industry, the arrow is animated for a consumer already being supplied, and faint and static otherwise.
+   - [ ] For a warehouse, the arrow is always bright and static.
    - [ ] Map clicks still select or open things while an arrow is shown.
    - [ ] Toggling off restores the normal overlay (the catchment circle, and the all-consumer arrows if Output is expanded).
    - [ ] Closing the window with an arrow showing leaves the map normal.
@@ -100,6 +101,12 @@ the plain-text `description` in `modinfo.json`. Edits made directly on mod.io
 are overwritten on the next upload, so keep both files current.
 
 ## Known limitations
+
+- Warehouse arrows can't show actual vs potential. The engine credits
+  deliveries out of a warehouse to the original producer (`itemsTransported`)
+  and to the delivering line (`itemsAtDestination`) in the consumer's log
+  book. The warehouse only logs load and unload counts. A future version
+  could match lines that serve both the warehouse and the consumer.
 
 - If you pin the window while an arrow is showing and then open another
   window, our arrow keeps the map. The new window's overlay is hidden until

@@ -111,6 +111,29 @@ In-game checks for the user:
 - README checklist additions.
 - Remove debug logs, or downgrade them to a single line on error.
 
+## Warehouse arrows (found 2026-10-08, decided: option 3)
+
+In-game log-book probes on a warehouse ("Pottstown Warehouse") showed:
+
+- The warehouse's `LOG_BOOK` has only `itemsLoaded<cargo>` and
+  `itemsUnloaded<cargo>`, with no per-destination references.
+- The warehouse is its own stock list entity (`Warehouse.stockList ==` the
+  warehouse).
+- A supplied town's log book credits the delivery to the **original producer**
+  (`refEntity2name2log[producer].itemsTransported<cargo>`) and to the
+  **delivering line** (`refEntity2name2log[line].itemsAtDestination<cargo>`),
+  never to the warehouse.
+- Industry consumers' log books were empty in the test, so industry-to-industry
+  logs live on the source industry.
+
+So `getCargoFlowCount(warehouse, ...)` is always 0. Decision: warehouse arrows
+use a fixed "Unknown" style, which is the Actual colour, static. Industries
+keep actual vs potential.
+
+Possible follow-up (option 1): call a flow "actual" when a line carrying the
+cargo serves both the warehouse and the consumer. This needs a
+station-to-catchment lookup.
+
 ## Out of scope
 
 - Several arrows at once.

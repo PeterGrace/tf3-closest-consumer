@@ -70,22 +70,17 @@ end
 
 -- stock.cargoType is only set for pinned slots, so ask the engine per stock like the base warehouse window
 -- (cargo_util.forEachCargoInStock). Prefer what is stored now; an empty warehouse falls back to what it accepts.
-local function getWarehouseCargoTypes(entity : Engine.Entity, warehouse : Engine.Component.Warehouse, stockList : Engine.Component.StockList) : {CargoTypeId}
+local function getWarehouseCargoTypes(warehouse : Engine.Component.Warehouse, stockList : Engine.Component.StockList) : {CargoTypeId}
 	local accepted : {CargoTypeId} = {}
 	local stored : {CargoTypeId} = {}
 	for i = 1, #stockList.stocks do
 		local stockId = (i - 1) as StockId
-		local counts : {string} = {}
 		for _, cargoType in ipairs(api.engine.util.stock.getStockCargoTypes(warehouse.stockList, stockId)) do
-			local count = api.engine.system.simEntityAtStockSystem.getStockCountForCargoType(warehouse.stockList, stockId, cargoType)
-			counts[#counts + 1] = tostring(cargoType) .. "=" .. tostring(count)
 			accepted[#accepted + 1] = cargoType
-			if count > 0 then
+			if api.engine.system.simEntityAtStockSystem.getStockCountForCargoType(warehouse.stockList, stockId, cargoType) > 0 then
 				stored[#stored + 1] = cargoType
 			end
 		end
-		debugPrint("[closest_consumer] debug warehouse " .. tostring(entity) .. " stock " .. tostring(stockId)
-			.. " pinned=" .. tostring(stockList.stocks[i].cargoType) .. " types={" .. table.concat(counts, ",") .. "}")
 	end
 	return uniqueSorted(#stored > 0 and stored or accepted)
 end
@@ -97,7 +92,7 @@ function nearest.getSourceCargoTypes(entity : Engine.Entity) : {CargoTypeId}
 	end
 	local warehouse = getWarehouse(entity)
 	if warehouse ~= nil then
-		return getWarehouseCargoTypes(entity, warehouse, stockList)
+		return getWarehouseCargoTypes(warehouse, stockList)
 	end
 	local outputs : {CargoTypeId} = {}
 	for _, rule in ipairs(stockList.rules) do
@@ -106,104 +101,6 @@ function nearest.getSourceCargoTypes(entity : Engine.Entity) : {CargoTypeId}
 		end
 	end
 	return uniqueSorted(outputs)
-end
-
--- The engine's cargo logs are keyed by stock list entity. An industry is its own stock list entity,
--- but a warehouse's stock list is a separate entity (Warehouse.stockList).
-local function getStockListEntity(entity : Engine.Entity) : Engine.Entity
-	local warehouse = getWarehouse(entity)
-	if warehouse ~= nil then
-		return warehouse.stockList
-	end
-	return entity
-end
-
--- TEMPORARY: identify an entity by its components and name.
-local function describeEntity(entity : Engine.Entity) : string
-	local kinds : {string} = {}
-	local types : {{string, Engine.ComponentType}} = {
-		{ "industry", api.type.ComponentType.INDUSTRY },
-		{ "warehouse", api.type.ComponentType.WAREHOUSE },
-		{ "station", api.type.ComponentType.STATION },
-		{ "stationGroup", api.type.ComponentType.STATION_GROUP },
-		{ "town", api.type.ComponentType.TOWN },
-		{ "townBuilding", api.type.ComponentType.TOWN_BUILDING },
-		{ "construction", api.type.ComponentType.CONSTRUCTION },
-		{ "stockList", api.type.ComponentType.STOCK_LIST },
-	}
-	for _, kind in ipairs(types) do
-		if api.engine.getComponent(entity, kind[2]) ~= nil then
-			kinds[#kinds + 1] = kind[1]
-		end
-	end
-	return tostring(entity) .. "[" .. table.concat(kinds, "/") .. " '" .. tostring(api.engine.util.getEntityName(entity)) .. "']"
-end
-
--- TEMPORARY: dump a log book's own log names and each related entity with its log names.
-local function dumpLogBook(label : string, entity : Engine.Entity)
-	local ok, result = pcall(function() : string
-		local logBook : Engine.Component.LogBook = api.engine.getComponent(entity, api.type.ComponentType.LOG_BOOK)
-		if logBook == nil then
-			return describeEntity(entity) .. " has no LOG_BOOK"
-		end
-		local names : {string} = {}
-		for name, _ in pairs(logBook.name2log_native:asTable()) do
-			names[#names + 1] = name
-		end
-		table.sort(names)
-		local refs : {string} = {}
-		for ref, name2log in pairs(logBook.refEntity2name2log) do
-			local refNames : {string} = {}
-			for name, _ in pairs(name2log) do
-				refNames[#refNames + 1] = name
-			end
-			table.sort(refNames)
-			refs[#refs + 1] = describeEntity(ref) .. "{" .. table.concat(refNames, ",") .. "}"
-		end
-		return describeEntity(entity) .. " names={" .. table.concat(names, ",") .. "} refs=" .. tostring(#refs) .. " " .. table.concat(refs, " ")
-	end)
-	debugPrint("[closest_consumer] debug logbook " .. label .. (ok and " " or " failed: ") .. tostring(result))
-end
-
--- TEMPORARY: logs every way of reading a warehouse's flow so the in-game log shows which ids the engine uses.
-local function probeWarehouseFlow(source : Engine.Entity, consumer : Engine.Entity, cargoType : CargoTypeId, consumerIsTown : boolean)
-	local stockListEntity = getStockListEntity(source)
-	local stock = api.engine.util.stock
-	local function targets(from : Engine.Entity) : string
-		local seen : {string} = {}
-		stock.getCargoLogPerYearForTargetFilter(from, function(target : Engine.Entity) : boolean
-			seen[#seen + 1] = tostring(target)
-			return true
-		end, "itemsTransported", cargoType)
-		return table.concat(seen, ",")
-	end
-	local line = "[closest_consumer] debug flow warehouse=" .. tostring(source) .. " stockList=" .. tostring(stockListEntity)
-		.. " consumer=" .. tostring(consumer) .. " isTown=" .. tostring(consumerIsTown) .. " cargo=" .. tostring(cargoType)
-		.. " fwd(warehouse)=" .. tostring(stock.getCargoLogPerYearForTarget(source, consumer, "itemsTransported", cargoType))
-		.. " fwd(stockList)=" .. tostring(stock.getCargoLogPerYearForTarget(stockListEntity, consumer, "itemsTransported", cargoType))
-		.. " targets(stockList)={" .. targets(stockListEntity) .. "}"
-		.. " shipped(stockList)=" .. tostring(stock.getCargoTypeShippedPerYear(stockListEntity, cargoType))
-		.. " delivered(stockList)=" .. tostring(stock.getCargoTypeDeliveredPerYear(stockListEntity, cargoType))
-	if consumerIsTown then
-		line = line .. " town(warehouse)=" .. tostring(stock.getCargoLogPerYearForTarget(consumer, source, "itemsTransported", cargoType))
-			.. " town(stockList)=" .. tostring(stock.getCargoLogPerYearForTarget(consumer, stockListEntity, "itemsTransported", cargoType))
-			.. " townSources={" .. targets(consumer) .. "}"
-	end
-	debugPrint(line)
-	dumpLogBook("source", source)
-	dumpLogBook("consumer", consumer)
-end
-
--- Mirrors cargo_util.getCargoFlowCount, but resolves the source to its stock list entity so warehouses work.
-function nearest.getFlowCount(source : Engine.Entity, consumer : Engine.Entity, cargoType : CargoTypeId, consumerIsTown : boolean) : integer
-	if getWarehouse(source) ~= nil then
-		probeWarehouseFlow(source, consumer, cargoType, consumerIsTown)
-	end
-	local from = getStockListEntity(source)
-	if consumerIsTown then
-		return api.engine.util.stock.getCargoLogPerYearForTarget(consumer, from, "itemsTransported", cargoType)
-	end
-	return api.engine.util.stock.getCargoLogPerYearForTarget(from, consumer, "itemsTransported", cargoType)
 end
 
 local function collectCandidates(sourceEntity : Engine.Entity, cargoTypes : {CargoTypeId}) : {CargoTypeId : {ClosestConsumerRank.Candidate}}

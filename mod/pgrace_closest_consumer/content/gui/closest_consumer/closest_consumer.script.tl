@@ -35,7 +35,17 @@ end
 local record FlowParams
 	gameCtx : GameContext
 	source : Engine.Entity
+	sourceIsWarehouse : boolean
 	selection : Selection
+end
+
+-- "Actual" (animated) when cargo already flows there, "Potential" (static, faint) when not.
+-- "Unknown" for warehouses: the engine credits deliveries out of a warehouse to the original producer and the
+-- delivering line, never to the warehouse, so we can't tell. Bright like Actual, but static so it claims no flow.
+local enum FlowStyle
+	"Actual"
+	"Potential"
+	"Unknown"
 end
 
 -- The renderer API (gui/main/builtin.lua) also has these, but they are missing from the type definitions.
@@ -68,15 +78,17 @@ local function makeHint(text : string) : TreeNodeId
 	return builtin.TextView{ meta = { class = "font-scale-annotation" }, text = text }
 end
 
--- Styled like the base industry window: animated "actual" colour if cargo already flows, else static faint "potential".
-local function makeFlowLayerConfig(from : Vec3f, to : Vec3f, cargoType : CargoTypeId, isActual : boolean) : LayerConfig
+-- Styled like the base industry window's consumer arrows.
+local function makeFlowLayerConfig(from : Vec3f, to : Vec3f, cargoType : CargoTypeId, style : FlowStyle) : LayerConfig
 	local colors = layerColors.CargoFlow.Consumers3D
 	local flow = api.type.LayerConfig.CargoFlowRenderableConfig.FlowData.new()
 	flow.from = from
 	flow.to = to
-	flow.speed = isActual and 40.0 or 0.0
-	flow.arrowColors = isActual and color_util.toArray4(colors.Actual) or color_util.toArray4WithTransparency(colors.Potential, transparency.VeryLow)
-	flow.cargoIconAlpha = isActual and 1.0 or 0.6
+	flow.speed = style == "Actual" and 40.0 or 0.0
+	flow.arrowColors = style == "Potential"
+		and color_util.toArray4WithTransparency(colors.Potential, transparency.VeryLow)
+		or color_util.toArray4(colors.Actual)
+	flow.cargoIconAlpha = style == "Potential" and 0.6 or 1.0
 	flow.cargoTypes = { cargoType }
 	local cargoFlow = api.type.LayerConfig.CargoFlowRenderableConfig.new()
 	cargoFlow.flowData = { flow }
@@ -106,8 +118,12 @@ local FlowAction = react.RegisterRecipe("ClosestConsumerFlowAction", function(pa
 		local action : function() : TreeNodeId = nil
 		if from ~= nil and to ~= nil then
 			local selection = params.selection
-			local isActual = nearest.getFlowCount(params.source, selection.consumer, selection.cargoType, selection.isTown) > 0
-			action = selector_react_util.makeDefaultSelectorAction(params.gameCtx, makeFlowLayerConfig(from, to, selection.cargoType, isActual))
+			local style : FlowStyle = "Unknown"
+			if not params.sourceIsWarehouse then
+				local count = cargo_util.getCargoFlowCount(params.source, selection.consumer, selection.cargoType, selection.isTown)
+				style = count > 0 and "Actual" or "Potential"
+			end
+			action = selector_react_util.makeDefaultSelectorAction(params.gameCtx, makeFlowLayerConfig(from, to, selection.cargoType, style))
 			frameCamera(from, to)
 		else
 			debugPrint("[closest_consumer] flow: no position for " .. key)
@@ -224,6 +240,7 @@ local NearestConsumersList = react.RegisterRecipe("ClosestConsumerList", functio
 		children[#children + 1] = FlowAction{
 			gameCtx = params.gameCtx,
 			source = params.entityId,
+			sourceIsWarehouse = params.isWarehouse,
 			selection = selectionState:old(),
 		}
 	end
