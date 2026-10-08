@@ -6,7 +6,7 @@ package.path = root .. "/.tools/?.lua;" .. package.path
 local tl = require("tl")
 package.path = table.concat({
 	root .. "/tools/?.d.tl",
-	root .. "/mod/pgrace_closest_consumer/content/?.d.tl",
+	root .. "/mod/pgrace_closest_consumer/tealdef/?.d.tl",
 	game .. "/api/tealdef/?.d.tl",
 	game .. "/base/tealdef/?.d.tl",
 }, ";") .. ";" .. package.path

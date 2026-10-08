@@ -1,4 +1,3 @@
 require "api_def"
 require "content_def"
-require "gui.closest_consumer.rank"
-require "gui.closest_consumer.nearest"
+require "pgrace_closest_consumer_def"
