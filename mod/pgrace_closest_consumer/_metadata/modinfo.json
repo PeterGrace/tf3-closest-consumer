@@ -1,0 +1,15 @@
+{
+    "authors": [
+        {
+            "name": "Peter Grace",
+            "role": "CREATOR"
+        }
+    ],
+    "name": "Closest Consumer",
+    "summary": "Shows the nearest consumers for each cargo in industry and warehouse windows.",
+    "description": "Adds a 'Nearest consumers' card to industry and warehouse windows. For each cargo the building sends out, it lists the three closest industries or towns that use it, with straight-line distance.",
+    "tags": [
+        "Script Mod"
+    ],
+    "url": ""
+}
