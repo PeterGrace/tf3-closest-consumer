@@ -38,9 +38,11 @@ local record FlowParams
 	selection : Selection
 end
 
--- setActiveOwner exists on the renderer API (gui/main/builtin.lua calls it) but is missing from the type definitions.
+-- The renderer API (gui/main/builtin.lua) also has these, but they are missing from the type definitions.
+-- The override takes precedence over the regular active owner (set by the tool stack's top entry) without
+-- replacing it, so clearing the override with `false` hands the map straight back to the window's own action.
 local record ActiveOwnerApi
-	setActiveOwner : function(ReactRefWrap)
+	setActiveOwnerOverride : function(ReactRefWrap | boolean)
 end
 
 local record FlowCache
@@ -91,8 +93,8 @@ local function frameCamera(from : Vec3f, to : Vec3f)
 	api.gui.camera.focusPosition(midpoint, distance)
 end
 
--- Binds a map action that draws one flow arrow and makes it the renderer's active owner.
--- Unmounting unbinds it, which should hand the map back to the industry window's own action.
+-- Binds a map action that draws one flow arrow and makes it the renderer's active owner override.
+-- Unmounting clears the override and unbinds the action, handing the map back to the industry window's own action.
 local FlowAction = react.RegisterRecipe("ClosestConsumerFlowAction", function(params : FlowParams) : TreeNodeId
 	local key = tostring(params.source) .. ">" .. tostring(params.selection.consumer) .. ":" .. tostring(params.selection.cargoType)
 	local cacheRef : ReactRefT<FlowCache> = react.useRef(nil)
@@ -112,10 +114,20 @@ local FlowAction = react.RegisterRecipe("ClosestConsumerFlowAction", function(pa
 
 	local selfRef = react.useAction(params.gameCtx.rendererComponent, cacheRef:get().action, FLOW_ACTION_KEY)
 
-	local function activate()
+	local function setOverride(owner : ReactRefWrap | boolean) : boolean
+		if params.gameCtx.rendererComponent:hasExpired() then
+			return false
+		end
 		local rc = params.gameCtx.rendererComponent:get()
-		if rc ~= nil and rc:getIdentity() then
-			(rc:getApi() as any as ActiveOwnerApi).setActiveOwner(selfRef)
+		if rc == nil or not rc:getIdentity() then
+			return false
+		end
+		(rc:getApi() as any as ActiveOwnerApi).setActiveOwnerOverride(owner)
+		return true
+	end
+
+	local function activate()
+		if setOverride(selfRef) then
 			debugPrint("[closest_consumer] flow on " .. key)
 		end
 	end
@@ -125,6 +137,7 @@ local FlowAction = react.RegisterRecipe("ClosestConsumerFlowAction", function(pa
 		activate()
 	end
 	react.onUnmount(function()
+		setOverride(false)
 		debugPrint("[closest_consumer] flow off " .. key)
 	end)
 
