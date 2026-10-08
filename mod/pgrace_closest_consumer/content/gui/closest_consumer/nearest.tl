@@ -18,8 +18,7 @@ local function getStockList(entity : Engine.Entity) : Engine.Component.StockList
 	return nil
 end
 
--- Centre of the bounding volume on the map plane, as the base industry window computes it.
-local function getPosition(entity : Engine.Entity) : number, number
+local function getBoundingVolume(entity : Engine.Entity) : Engine.Component.BoundingVolume
 	local bv : Engine.Component.BoundingVolume = api.engine.getComponent(entity, api.type.ComponentType.BOUNDING_VOLUME)
 	if bv == nil then
 		local warehouse = getWarehouse(entity)
@@ -27,10 +26,24 @@ local function getPosition(entity : Engine.Entity) : number, number
 			bv = api.engine.getComponent(warehouse.construction, api.type.ComponentType.BOUNDING_VOLUME)
 		end
 	end
+	return bv
+end
+
+-- Centre of the bounding volume on the map plane, as the base industry window computes it.
+local function getPosition(entity : Engine.Entity) : number, number
+	local bv = getBoundingVolume(entity)
 	if bv == nil then
 		return nil, nil
 	end
 	return 0.5 * (bv.bbox.min.x + bv.bbox.max.x), 0.5 * (bv.bbox.min.y + bv.bbox.max.y)
+end
+
+function nearest.getPosition3(entity : Engine.Entity) : Vec3f
+	local bv = getBoundingVolume(entity)
+	if bv == nil then
+		return nil
+	end
+	return api.type.Vec3f.new(0.5 * (bv.bbox.min.x + bv.bbox.max.x), 0.5 * (bv.bbox.min.y + bv.bbox.max.y), bv.bbox.max.z)
 end
 
 local function getName(entity : Engine.Entity) : string
