@@ -135,6 +135,8 @@ local function probeWarehouseFlow(source : Engine.Entity, consumer : Engine.Enti
 		.. " fwd(warehouse)=" .. tostring(stock.getCargoLogPerYearForTarget(source, consumer, "itemsTransported", cargoType))
 		.. " fwd(stockList)=" .. tostring(stock.getCargoLogPerYearForTarget(stockListEntity, consumer, "itemsTransported", cargoType))
 		.. " targets(stockList)={" .. targets(stockListEntity) .. "}"
+		.. " shipped(stockList)=" .. tostring(stock.getCargoTypeShippedPerYear(stockListEntity, cargoType))
+		.. " delivered(stockList)=" .. tostring(stock.getCargoTypeDeliveredPerYear(stockListEntity, cargoType))
 	if consumerIsTown then
 		line = line .. " town(warehouse)=" .. tostring(stock.getCargoLogPerYearForTarget(consumer, source, "itemsTransported", cargoType))
 			.. " town(stockList)=" .. tostring(stock.getCargoLogPerYearForTarget(consumer, stockListEntity, "itemsTransported", cargoType))
