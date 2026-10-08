@@ -82,6 +82,23 @@ to re-run `install.sh`, unless you added or removed files: then run
    - [ ] Closing the window with an arrow showing leaves the map normal.
    - [ ] The game's own Stocks and Consumers sections still work as before.
 
+## Releasing
+
+1. Put screenshots in `mod/pgrace_closest_consumer/_metadata/`: `0.png` is
+   the cover, and `1.png`, `2.png`, ... are the gallery. Each must be 1920x1080
+   and at most 8 MB, with no added text, logos or overlays.
+2. For an update, bump `revision` in `mod.json`.
+3. Run `tools/check.sh && lua tools/test.lua && python3 tools/release_check.py`.
+4. In TF3, open **Mod Hub > My Mods** (the mod is listed from the staging
+   area). Check the description and images, write a changelog message, and
+   click **Upload**. The game validates the mod before upload.
+5. After the first upload, keep the `_metadata/mod.io_fileid.txt` the game
+   creates. It links later uploads to the same mod.io entry, so commit it.
+
+The formatted description is in `_metadata/description.html`, which overrides
+the plain-text `description` in `modinfo.json`. Edits made directly on mod.io
+are overwritten on the next upload, so keep both files current.
+
 ## Known limitations
 
 - If you pin the window while an arrow is showing and then open another

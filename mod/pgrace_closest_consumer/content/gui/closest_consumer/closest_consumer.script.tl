@@ -11,8 +11,6 @@ local warehouse_eow = ug_require "::/gui/entity_window/warehouse/warehouse_eow.s
 local nearest = ug_require "pgrace_closest_consumer::/gui/closest_consumer/nearest.tl" as ClosestConsumerNearest
 local rank = ug_require "pgrace_closest_consumer::/gui/closest_consumer/rank.tl" as ClosestConsumerRank
 
-debugPrint("[closest_consumer] script loaded")
-
 local layerColors = api.gui.genericRep.get(api.gui.genericRep.find("::/gui/layers/layer_colors.gres")).data as LayerColors
 local transparency = api.gui.genericRep.get(api.gui.genericRep.find("::/gui/main/transparency.gres")).data as GResTransparency
 
@@ -127,7 +125,12 @@ local FlowAction = react.RegisterRecipe("ClosestConsumerFlowAction", function(pa
 		if rc == nil or not rc:getIdentity() then
 			return false
 		end
-		(rc:getApi() as any as ActiveOwnerApi).setActiveOwnerOverride(owner)
+		-- Not part of the documented API: degrade to "no arrow" rather than erroring if a game update removes it.
+		local rcApi = rc:getApi() as any as ActiveOwnerApi
+		if rcApi.setActiveOwnerOverride == nil then
+			return false
+		end
+		rcApi.setActiveOwnerOverride(owner)
 		return true
 	end
 
