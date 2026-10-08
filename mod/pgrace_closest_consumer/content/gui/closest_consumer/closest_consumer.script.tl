@@ -214,7 +214,7 @@ local NearestConsumersList = react.RegisterRecipe("ClosestConsumerList", functio
 	if current.failed then
 		children[1] = makeHint(_("Closest consumer: error (see log)"))
 	elseif #current.results == 0 then
-		children[1] = makeHint(params.isWarehouse and _("No cargo assigned") or _("No outputs"))
+		children[1] = makeHint(params.isWarehouse and _("No cargo stored or accepted") or _("No outputs"))
 	else
 		for _, result in ipairs(current.results) do
 			children[#children + 1] = makeCargoSection(result, selectionState)

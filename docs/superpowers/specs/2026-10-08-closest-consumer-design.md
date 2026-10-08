@@ -79,7 +79,15 @@ and returns it in the module table. Base-game references:
 
 1. **Source cargo types**
    - Industry: the union of `stockList.rules[i].output` keys.
-   - Warehouse: the `cargoType` of each stock in its stock list. Unassigned
+   - Warehouse (corrected 2026-10-08): `stock.cargoType` is only set for
+     *pinned* slots, so it isn't used. For each stock,
+     `api.engine.util.stock.getStockCargoTypes(warehouse.stockList, stockId)`
+     gives its cargo types, and
+     `simEntityAtStockSystem.getStockCountForCargoType` gives the amount
+     stored. The card uses the types stored now; an empty warehouse uses all
+     accepted types. This is the base warehouse window's method
+     (`cargo_util.forEachCargoInStock`). Original text: the `cargoType` of each
+     stock in its stock list. Unassigned
      stocks (cargo type < 0) are ignored, and so are the `cargoTypes` sets of
      mixed stocks.
 2. **Candidates per cargo**
@@ -113,7 +121,7 @@ cargo it shows:
 Empty states:
 
 - A cargo with no candidates shows "No consumers on this map".
-- A warehouse with no assigned cargo shows "No cargo assigned".
+- A warehouse with no stored or accepted cargo shows "No cargo stored or accepted".
 - An industry with no outputs gets no card: the condition function returns
   false.
 
@@ -138,8 +146,8 @@ Empty states:
    - A coal mine lists its nearest coal consumers with distances.
    - A town appears with "(town)".
    - The Locate button moves the camera, and clicking a name opens that window.
-   - A warehouse with assigned cargo lists consumers.
-   - A warehouse with nothing assigned shows "No cargo assigned".
+   - A warehouse holding cargo lists consumers.
+   - An empty warehouse lists consumers for the cargo it accepts.
    - A pure consumer (no outputs) shows no card.
 
 ## Install for development

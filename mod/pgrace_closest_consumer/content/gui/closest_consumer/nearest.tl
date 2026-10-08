@@ -54,32 +54,58 @@ local function getName(entity : Engine.Entity) : string
 	return name
 end
 
-function nearest.getSourceCargoTypes(entity : Engine.Entity) : {CargoTypeId}
-	local stockList = getStockList(entity)
-	if stockList == nil then
-		return {}
-	end
+-- Sorted, de-duplicated cargo type ids, ignoring the "none" marker (-1).
+local function uniqueSorted(cargoTypes : {CargoTypeId}) : {CargoTypeId}
 	local seen : {CargoTypeId : boolean} = {}
 	local result : {CargoTypeId} = {}
-	local function add(cargoType : CargoTypeId)
+	for _, cargoType in ipairs(cargoTypes) do
 		if cargoType >= 0 and not seen[cargoType] then
 			seen[cargoType] = true
 			result[#result + 1] = cargoType
 		end
 	end
-	if getWarehouse(entity) ~= nil then
-		for _, stock in ipairs(stockList.stocks) do
-			add(stock.cargoType)
-		end
-	else
-		for _, rule in ipairs(stockList.rules) do
-			for cargoType, _ in pairs(rule.output) do
-				add(cargoType)
-			end
-		end
-	end
 	table.sort(result)
 	return result
+end
+
+-- stock.cargoType is only set for pinned slots, so ask the engine per stock like the base warehouse window
+-- (cargo_util.forEachCargoInStock). Prefer what is stored now; an empty warehouse falls back to what it accepts.
+local function getWarehouseCargoTypes(entity : Engine.Entity, warehouse : Engine.Component.Warehouse, stockList : Engine.Component.StockList) : {CargoTypeId}
+	local accepted : {CargoTypeId} = {}
+	local stored : {CargoTypeId} = {}
+	for i = 1, #stockList.stocks do
+		local stockId = (i - 1) as StockId
+		local counts : {string} = {}
+		for _, cargoType in ipairs(api.engine.util.stock.getStockCargoTypes(warehouse.stockList, stockId)) do
+			local count = api.engine.system.simEntityAtStockSystem.getStockCountForCargoType(warehouse.stockList, stockId, cargoType)
+			counts[#counts + 1] = tostring(cargoType) .. "=" .. tostring(count)
+			accepted[#accepted + 1] = cargoType
+			if count > 0 then
+				stored[#stored + 1] = cargoType
+			end
+		end
+		debugPrint("[closest_consumer] debug warehouse " .. tostring(entity) .. " stock " .. tostring(stockId)
+			.. " pinned=" .. tostring(stockList.stocks[i].cargoType) .. " types={" .. table.concat(counts, ",") .. "}")
+	end
+	return uniqueSorted(#stored > 0 and stored or accepted)
+end
+
+function nearest.getSourceCargoTypes(entity : Engine.Entity) : {CargoTypeId}
+	local stockList = getStockList(entity)
+	if stockList == nil then
+		return {}
+	end
+	local warehouse = getWarehouse(entity)
+	if warehouse ~= nil then
+		return getWarehouseCargoTypes(entity, warehouse, stockList)
+	end
+	local outputs : {CargoTypeId} = {}
+	for _, rule in ipairs(stockList.rules) do
+		for cargoType, _ in pairs(rule.output) do
+			outputs[#outputs + 1] = cargoType
+		end
+	end
+	return uniqueSorted(outputs)
 end
 
 local function collectCandidates(sourceEntity : Engine.Entity, cargoTypes : {CargoTypeId}) : {CargoTypeId : {ClosestConsumerRank.Candidate}}

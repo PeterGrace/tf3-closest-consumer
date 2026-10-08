@@ -72,8 +72,8 @@ to re-run `install.sh`, unless you added or removed files: then run
    - [ ] A town that demands the cargo appears with "(town)".
    - [ ] The Locate button moves the camera to the consumer.
    - [ ] Clicking a consumer's name opens its window.
-   - [ ] A warehouse with assigned cargo lists consumers for that cargo.
-   - [ ] A warehouse with nothing assigned shows "No cargo assigned".
+   - [ ] A warehouse holding cargo lists consumers for the cargo it holds, whether or not its slots are pinned.
+   - [ ] An empty warehouse lists consumers for the cargo its slots accept.
    - [ ] A pure consumer (e.g. a power plant) shows no card.
    - [ ] The arrow toggle shows exactly one flow arrow and frames both ends; switching rows moves it.
    - [ ] The arrow is animated for a consumer already being supplied, and faint and static otherwise.
