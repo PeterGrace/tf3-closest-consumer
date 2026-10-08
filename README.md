@@ -33,7 +33,18 @@ tests/                                # unit tests for rank.tl
 
 ## Dev loop
 
-The tools need `lua` (5.4 or later) and `python3`.
+The tools need `lua` (5.4 or later) and `python3`. The common tasks are
+wrapped in a [`justfile`](justfile); run `just` to list them.
+
+```bash
+just check      # type-check against the game's API definitions
+just test       # unit tests
+just verify     # check + test + release-check
+just install    # symlink into the staging area (just install-copy to copy)
+just revision   # current vs last uploaded revision
+```
+
+The underlying scripts:
 
 ```bash
 tools/fetch-tl.sh      # once: downloads Teal 0.24.8 into .tools/
@@ -85,16 +96,22 @@ to re-run `install.sh`, unless you added or removed files: then run
 
 ## Releasing
 
+Uploaded revisions are marked with `rev-<N>` git tags. `just check-revision`
+fails if `mod.json`'s revision isn't newer than the last tag.
+
 1. Put screenshots in `mod/pgrace_closest_consumer/_metadata/`: `0.png` is
    the cover, and `1.png`, `2.png`, ... are the gallery. Each must be 1920x1080
    and at most 8 MB, with no added text, logos or overlays.
-2. For an update, bump `revision` in `mod.json`.
-3. Run `tools/check.sh && lua tools/test.lua && python3 tools/release_check.py`.
+2. For an update, run `just bump` and commit the change.
+3. Run `just release`. It does the revision check, type check, tests and
+   release check.
 4. In TF3, open **Mod Hub > My Mods** (the mod is listed from the staging
-   area). Check the description and images, write a changelog message, and
-   click **Upload**. The game validates the mod before upload.
-5. After the first upload, keep the `_metadata/mod.io_fileid.txt` the game
-   creates. It links later uploads to the same mod.io entry, so commit it.
+   area). Check the description and images, and confirm it says "The existing
+   mod on mod.io will be updated". Then write a changelog message and click
+   **Upload**. The game validates the mod before upload.
+5. Commit anything the upload changed (the first upload creates
+   `_metadata/mod.io_fileid.txt`, which links later uploads to the same mod.io
+   entry). Then run `just mark-uploaded` to tag and push `rev-<N>`.
 
 The formatted description is in `_metadata/description.html`, which overrides
 the plain-text `description` in `modinfo.json`. Edits made directly on mod.io
