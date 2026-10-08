@@ -5,6 +5,12 @@ For each cargo the building sends out, it lists the three closest industries or
 towns that consume that cargo, with straight-line distances. Each row has the
 game's Locate button, and the consumer's name opens its window.
 
+Each row also has a **flow arrow toggle**. It shows a single cargo-flow arrow on
+the map, from the building to that consumer, and frames the camera on both ends.
+The arrow is animated if cargo already flows there; otherwise it's faint and
+static. Only one arrow shows at a time. Toggling it off, or closing the window,
+gives the map back to the window's normal overlay.
+
 - Mod ID: `pgrace_closest_consumer`
 - Cosmetic: yes. It doesn't affect the simulation, so achievements stay enabled.
 - Design: [docs/superpowers/specs/2026-10-08-closest-consumer-design.md](docs/superpowers/specs/2026-10-08-closest-consumer-design.md)
@@ -69,7 +75,18 @@ to re-run `install.sh`, unless you added or removed files: then run
    - [ ] A warehouse with assigned cargo lists consumers for that cargo.
    - [ ] A warehouse with nothing assigned shows "No cargo assigned".
    - [ ] A pure consumer (e.g. a power plant) shows no card.
+   - [ ] The arrow toggle shows exactly one flow arrow and frames both ends; switching rows moves it.
+   - [ ] The arrow is animated for a consumer already being supplied, and faint and static otherwise.
+   - [ ] Map clicks still select or open things while an arrow is shown.
+   - [ ] Toggling off restores the normal overlay (the catchment circle, and the all-consumer arrows if Output is expanded).
+   - [ ] Closing the window with an arrow showing leaves the map normal.
    - [ ] The game's own Stocks and Consumers sections still work as before.
+
+## Known limitations
+
+- If you pin the window while an arrow is showing and then open another
+  window, our arrow keeps the map. The new window's overlay is hidden until
+  you toggle the arrow off or close the pinned window.
 
 ## Troubleshooting
 

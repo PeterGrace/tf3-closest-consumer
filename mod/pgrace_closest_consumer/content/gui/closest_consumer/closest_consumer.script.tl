@@ -14,6 +14,7 @@ local rank = ug_require "pgrace_closest_consumer::/gui/closest_consumer/rank.tl"
 debugPrint("[closest_consumer] script loaded")
 
 local layerColors = api.gui.genericRep.get(api.gui.genericRep.find("::/gui/layers/layer_colors.gres")).data as LayerColors
+local transparency = api.gui.genericRep.get(api.gui.genericRep.find("::/gui/main/transparency.gres")).data as GResTransparency
 
 local RESULT_LIMIT = 3
 local FLOW_ACTION_KEY = "closest_consumer_flow"
@@ -30,6 +31,7 @@ end
 local record Selection
 	consumer : Engine.Entity
 	cargoType : CargoTypeId
+	isTown : boolean
 end
 
 local record FlowParams
@@ -68,13 +70,15 @@ local function makeHint(text : string) : TreeNodeId
 	return builtin.TextView{ meta = { class = "font-scale-annotation" }, text = text }
 end
 
-local function makeFlowLayerConfig(from : Vec3f, to : Vec3f, cargoType : CargoTypeId) : LayerConfig
+-- Styled like the base industry window: animated "actual" colour if cargo already flows, else static faint "potential".
+local function makeFlowLayerConfig(from : Vec3f, to : Vec3f, cargoType : CargoTypeId, isActual : boolean) : LayerConfig
+	local colors = layerColors.CargoFlow.Consumers3D
 	local flow = api.type.LayerConfig.CargoFlowRenderableConfig.FlowData.new()
 	flow.from = from
 	flow.to = to
-	flow.speed = 40.0
-	flow.arrowColors = color_util.toArray4(layerColors.CargoFlow.Consumers3D.Actual)
-	flow.cargoIconAlpha = 1.0
+	flow.speed = isActual and 40.0 or 0.0
+	flow.arrowColors = isActual and color_util.toArray4(colors.Actual) or color_util.toArray4WithTransparency(colors.Potential, transparency.VeryLow)
+	flow.cargoIconAlpha = isActual and 1.0 or 0.6
 	flow.cargoTypes = { cargoType }
 	local cargoFlow = api.type.LayerConfig.CargoFlowRenderableConfig.new()
 	cargoFlow.flowData = { flow }
@@ -89,7 +93,6 @@ local function frameCamera(from : Vec3f, to : Vec3f)
 	local gap = math.sqrt(dx * dx + dy * dy)
 	local distance = math.max(CAMERA_MIN_DISTANCE, gap * CAMERA_DISTANCE_FACTOR)
 	local midpoint = api.type.Vec3f.new(0.5 * (from.x + to.x), 0.5 * (from.y + to.y), 0.5 * (from.z + to.z))
-	debugPrint("[closest_consumer] camera gap=" .. tostring(gap) .. " distance=" .. tostring(distance))
 	api.gui.camera.focusPosition(midpoint, distance)
 end
 
@@ -104,7 +107,9 @@ local FlowAction = react.RegisterRecipe("ClosestConsumerFlowAction", function(pa
 		local to = nearest.getPosition3(params.selection.consumer)
 		local action : function() : TreeNodeId = nil
 		if from ~= nil and to ~= nil then
-			action = selector_react_util.makeDefaultSelectorAction(params.gameCtx, makeFlowLayerConfig(from, to, params.selection.cargoType))
+			local selection = params.selection
+			local isActual = cargo_util.getCargoFlowCount(params.source, selection.consumer, selection.cargoType, selection.isTown) > 0
+			action = selector_react_util.makeDefaultSelectorAction(params.gameCtx, makeFlowLayerConfig(from, to, selection.cargoType, isActual))
 			frameCamera(from, to)
 		else
 			debugPrint("[closest_consumer] flow: no position for " .. key)
@@ -127,9 +132,7 @@ local FlowAction = react.RegisterRecipe("ClosestConsumerFlowAction", function(pa
 	end
 
 	local function activate()
-		if setOverride(selfRef) then
-			debugPrint("[closest_consumer] flow on " .. key)
-		end
+		setOverride(selfRef)
 	end
 
 	react.onMount(activate)
@@ -138,7 +141,6 @@ local FlowAction = react.RegisterRecipe("ClosestConsumerFlowAction", function(pa
 	end
 	react.onUnmount(function()
 		setOverride(false)
-		debugPrint("[closest_consumer] flow off " .. key)
 	end)
 
 	return builtin.BoxLayout{ children = {} }
@@ -164,7 +166,7 @@ local function makeConsumerRow(consumer : ClosestConsumerRank.Ranked, cargoType 
 				value = isSelected and 1 or 0,
 				onValueChange = function(value : integer)
 					if value == 1 then
-						selectionState:set({ consumer = consumer.entity, cargoType = cargoType })
+						selectionState:set({ consumer = consumer.entity, cargoType = cargoType, isTown = consumer.isTown })
 					else
 						selectionState:set(nil)
 					end
