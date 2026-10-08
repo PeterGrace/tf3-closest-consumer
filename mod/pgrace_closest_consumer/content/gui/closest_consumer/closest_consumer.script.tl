@@ -106,7 +106,7 @@ local FlowAction = react.RegisterRecipe("ClosestConsumerFlowAction", function(pa
 		local action : function() : TreeNodeId = nil
 		if from ~= nil and to ~= nil then
 			local selection = params.selection
-			local isActual = cargo_util.getCargoFlowCount(params.source, selection.consumer, selection.cargoType, selection.isTown) > 0
+			local isActual = nearest.getFlowCount(params.source, selection.consumer, selection.cargoType, selection.isTown) > 0
 			action = selector_react_util.makeDefaultSelectorAction(params.gameCtx, makeFlowLayerConfig(from, to, selection.cargoType, isActual))
 			frameCamera(from, to)
 		else

@@ -8,6 +8,8 @@ global record ClosestConsumerNearest
 	getPosition3 : function(entity : Engine.Entity) : Vec3f
 	-- Cargo types the entity sends out: industry rule outputs; for a warehouse, what it stores now, or if empty what its stocks accept.
 	getSourceCargoTypes : function(entity : Engine.Entity) : {CargoTypeId}
+	-- Items of cargoType moved from source to consumer per year, from the engine's transport log.
+	getFlowCount : function(source : Engine.Entity, consumer : Engine.Entity, cargoType : CargoTypeId, consumerIsTown : boolean) : integer
 	-- For each source cargo type (sorted by id), the nearest `limit` consumers. Warehouses and the source are never consumers.
 	findNearestConsumers : function(entity : Engine.Entity, limit : integer) : {CargoResult}
 end
