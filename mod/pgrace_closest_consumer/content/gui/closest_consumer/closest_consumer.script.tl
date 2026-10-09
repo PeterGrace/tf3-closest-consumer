@@ -141,12 +141,7 @@ local FlowAction = react.RegisterRecipe("ClosestConsumerFlowAction", function(pa
 		local action : function() : TreeNodeId = nil
 		if from ~= nil and to ~= nil then
 			local style : FlowStyle = "Unknown"
-			if selection.viaWarehouse then
-				-- PROBE (remove before release): does either log direction record warehouse deliveries?
-				debugPrint(string.format("[closest_consumer] probe %s itemsTransported fwd=%d rev=%d", key,
-					api.engine.util.stock.getCargoLogPerYearForTarget(selection.from, selection.to, "itemsTransported", selection.cargoType),
-					api.engine.util.stock.getCargoLogPerYearForTarget(selection.to, selection.from, "itemsTransported", selection.cargoType)))
-			else
+			if not selection.viaWarehouse then
 				local count = cargo_util.getCargoFlowCount(selection.from, selection.to, selection.cargoType, selection.toIsTown)
 				style = count > 0 and "Actual" or "Potential"
 			end
