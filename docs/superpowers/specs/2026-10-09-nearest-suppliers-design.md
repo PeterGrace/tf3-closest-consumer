@@ -57,6 +57,7 @@ Suppliers
 
 - If there are no producers, the block shows the hint "No producers on this map".
 - The Warehouses sub-list is left out when no other warehouse holds the cargo.
+  The "Producers" label then goes too, so the block looks like a consumer block.
 - When there are no inputs at all, the hints are "No inputs" for an industry and "No cargo
   accepted" for a warehouse. They only show when the other section exists, since otherwise the
   card is hidden.
