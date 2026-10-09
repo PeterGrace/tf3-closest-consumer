@@ -63,6 +63,14 @@ Suppliers
   card is hidden.
 - The Consumers section is unchanged.
 
+**Collapsible cargo blocks** (added after the first in-game test, when a warehouse listed every cargo):
+
+- Each cargo header is a button with the game's combobox arrows (`arrow_right` / `arrow_down`), as in
+  `collapsible_checkbox_list.tl`. It shows the nearest distance in that block, so a collapsed list is still useful.
+- A section with more than 3 cargo types starts collapsed (typically warehouses). Smaller sections start open.
+- What the player opens or closes is remembered only while the window stays open.
+- Collapsing a cargo keeps its arrow on, if one is shown.
+
 ## Logic (`nearest.tl`)
 
 ### Inputs of the clicked building

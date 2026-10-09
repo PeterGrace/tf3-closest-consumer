@@ -18,6 +18,8 @@ local RESULT_LIMIT = 3
 local FLOW_ACTION_KEY = "closest_consumer_flow"
 local CAMERA_DISTANCE_FACTOR = 1.2
 local CAMERA_MIN_DISTANCE = 500
+-- Sections listing more cargo types than this start collapsed (typically warehouses).
+local FOLD_THRESHOLD = 3
 
 local record ListParams
 	entityId : Engine.Entity
@@ -225,18 +227,49 @@ local function makeFlowRow(entry : ClosestConsumerRank.Ranked, flow : Selection,
 	}
 end
 
-local function makeCargoHeader(cargoType : CargoTypeId) : TreeNodeId
-	return builtin.BoxLayout{
-		orientation = builtin.type.Orientation.Horizontal,
-		children = {
-			cargo_react_util.makeCargoIcon(cargoType),
-			builtin.TextView{ text = cargo_util.getCargoNameById(cargoType) },
+-- Expand/collapse state of one cargo block, and how to flip it.
+local record Fold
+	expanded : boolean
+	toggle : function()
+end
+
+-- Clickable cargo header with the game's combobox arrows (as in collapsible_checkbox_list); shows the nearest
+-- distance so collapsed blocks are still useful.
+local function makeCargoHeader(cargoType : CargoTypeId, nearestDistance : number, fold : Fold) : TreeNodeId
+	return builtin.Button{
+		content = builtin.BoxLayout{
+			orientation = builtin.type.Orientation.Horizontal,
+			children = {
+				builtin.ImageView{
+					path = fold.expanded and "::/gui/builtin/combobox/arrow_down.tga" or "::/gui/builtin/combobox/arrow_right.tga",
+				},
+				cargo_react_util.makeCargoIcon(cargoType),
+				builtin.TextView{ text = cargo_util.getCargoNameById(cargoType) },
+				nearestDistance ~= nil and builtin.TextView{ text = rank.formatDistance(nearestDistance) } or nil,
+			},
 		},
+		onClick = fold.toggle,
 	}
 end
 
-local function makeConsumerSection(result : ClosestConsumerNearest.CargoResult, params : ListParams, selectionState : ReactStateT<Selection>) : TreeNodeId
-	local children : {TreeNodeId} = { makeCargoHeader(result.cargoType) }
+-- Distance of the closest entry across the given (already sorted) lists; nil when all are empty.
+local function nearestOf(lists : {{ClosestConsumerRank.Ranked}}) : number
+	local best : number = nil
+	for _, list in ipairs(lists) do
+		local first = list[1]
+		if first ~= nil and (best == nil or first.distance < best) then
+			best = first.distance
+		end
+	end
+	return best
+end
+
+local function makeConsumerSection(result : ClosestConsumerNearest.CargoResult, params : ListParams, selectionState : ReactStateT<Selection>, fold : Fold) : TreeNodeId
+	local header = makeCargoHeader(result.cargoType, nearestOf({ result.consumers }), fold)
+	if not fold.expanded then
+		return header
+	end
+	local children : {TreeNodeId} = { header }
 	if #result.consumers == 0 then
 		children[#children + 1] = makeHint(_("No consumers on this map"))
 	else
@@ -253,8 +286,12 @@ local function makeConsumerSection(result : ClosestConsumerNearest.CargoResult, 
 	return builtin.BoxLayout{ orientation = builtin.type.Orientation.Vertical, children = children }
 end
 
-local function makeSupplierSection(result : ClosestConsumerNearest.SupplyResult, params : ListParams, selectionState : ReactStateT<Selection>) : TreeNodeId
-	local children : {TreeNodeId} = { makeCargoHeader(result.cargoType) }
+local function makeSupplierSection(result : ClosestConsumerNearest.SupplyResult, params : ListParams, selectionState : ReactStateT<Selection>, fold : Fold) : TreeNodeId
+	local header = makeCargoHeader(result.cargoType, nearestOf({ result.producers, result.warehouses }), fold)
+	if not fold.expanded then
+		return header
+	end
+	local children : {TreeNodeId} = { header }
 	-- The sub-list labels only matter when both lists show.
 	local hasWarehouses = #result.warehouses > 0
 	if hasWarehouses then
@@ -297,6 +334,28 @@ local NearestList = react.RegisterRecipe("ClosestConsumerList", function(params 
 	local selectionState = react.useStateLazy(function() : Selection
 		return nil
 	end)
+	-- Cargo blocks the player opened or closed, keyed "s<cargo>" / "c<cargo>"; the rest use the section default.
+	local foldState = react.useStateLazy(function() : {string : boolean}
+		return {}
+	end)
+	local function makeFold(key : string, sectionSize : integer) : Fold
+		local overrides = foldState:old()
+		local expanded = overrides[key]
+		if expanded == nil then
+			expanded = sectionSize <= FOLD_THRESHOLD
+		end
+		return {
+			expanded = expanded,
+			toggle = function()
+				local next : {string : boolean} = {}
+				for k, v in pairs(foldState:old()) do
+					next[k] = v
+				end
+				next[key] = not expanded
+				foldState:set(next)
+			end,
+		}
+	end
 
 	local children : {TreeNodeId} = {}
 	local function add(node : TreeNodeId)
@@ -315,7 +374,7 @@ local NearestList = react.RegisterRecipe("ClosestConsumerList", function(params 
 				add(makeHint(params.isWarehouse and _("No cargo accepted") or _("No inputs")))
 			else
 				for _, result in ipairs(current.suppliers) do
-					add(makeSupplierSection(result, params, selectionState))
+					add(makeSupplierSection(result, params, selectionState, makeFold("s" .. tostring(result.cargoType), #current.suppliers)))
 				end
 			end
 		end
@@ -327,7 +386,7 @@ local NearestList = react.RegisterRecipe("ClosestConsumerList", function(params 
 				add(makeHint(params.isWarehouse and _("No cargo stored or accepted") or _("No outputs")))
 			else
 				for _, result in ipairs(current.consumers) do
-					add(makeConsumerSection(result, params, selectionState))
+					add(makeConsumerSection(result, params, selectionState, makeFold("c" .. tostring(result.cargoType), #current.consumers)))
 				end
 			end
 		end
