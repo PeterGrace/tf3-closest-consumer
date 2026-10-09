@@ -92,7 +92,8 @@ to re-run `install.sh`, unless you added or removed files: then run
    - [ ] A warehouse holding cargo lists consumers for the cargo it holds, whether or not its slots are pinned.
    - [ ] An empty warehouse lists consumers for the cargo its slots accept.
    - [ ] A pure consumer (e.g. a power plant) shows only **Nearest suppliers**.
-   - [ ] The arrow toggle shows exactly one flow arrow and frames both ends; switching rows moves it.
+   - [ ] The arrow toggle shows exactly one flow arrow and frames both ends; switching rows moves it on the first click.
+   - [ ] Both ends of the arrow are left of the entity window, also after rotating the camera.
    - [ ] For an industry, the arrow is animated for a consumer already being supplied, and faint and static otherwise.
    - [ ] Arrows to or from a warehouse are always bright and static.
    - [ ] Map clicks still select or open things while an arrow is shown.
