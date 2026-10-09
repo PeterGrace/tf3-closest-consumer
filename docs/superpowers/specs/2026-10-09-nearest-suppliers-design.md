@@ -67,8 +67,9 @@ Suppliers
 
 - Each cargo header is a button with the game's combobox arrows (`arrow_right` / `arrow_down`), as in
   `collapsible_checkbox_list.tl`. It shows the nearest distance in that block, so a collapsed list is still useful.
-- A section with more than 3 cargo types starts collapsed (typically warehouses). Smaller sections start open.
-- What the player opens or closes is remembered only while the window stays open.
+- Every cargo block starts collapsed, in every card. (A first version opened sections with up to 3 cargo types;
+  the user preferred one consistent rule.)
+- What the player opens is remembered only while the window stays open.
 - Collapsing a cargo keeps its arrow on, if one is shown.
 
 ## Logic (`nearest.tl`)

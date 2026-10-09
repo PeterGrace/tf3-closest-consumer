@@ -18,8 +18,6 @@ local RESULT_LIMIT = 3
 local FLOW_ACTION_KEY = "closest_consumer_flow"
 local CAMERA_DISTANCE_FACTOR = 1.2
 local CAMERA_MIN_DISTANCE = 500
--- Sections listing more cargo types than this start collapsed (typically warehouses).
-local FOLD_THRESHOLD = 3
 
 local record ListParams
 	entityId : Engine.Entity
@@ -334,16 +332,12 @@ local NearestList = react.RegisterRecipe("ClosestConsumerList", function(params 
 	local selectionState = react.useStateLazy(function() : Selection
 		return nil
 	end)
-	-- Cargo blocks the player opened or closed, keyed "s<cargo>" / "c<cargo>"; the rest use the section default.
+	-- Cargo blocks the player opened, keyed "s<cargo>" / "c<cargo>"; every block starts collapsed.
 	local foldState = react.useStateLazy(function() : {string : boolean}
 		return {}
 	end)
-	local function makeFold(key : string, sectionSize : integer) : Fold
-		local overrides = foldState:old()
-		local expanded = overrides[key]
-		if expanded == nil then
-			expanded = sectionSize <= FOLD_THRESHOLD
-		end
+	local function makeFold(key : string) : Fold
+		local expanded = foldState:old()[key] == true
 		return {
 			expanded = expanded,
 			toggle = function()
@@ -374,7 +368,7 @@ local NearestList = react.RegisterRecipe("ClosestConsumerList", function(params 
 				add(makeHint(params.isWarehouse and _("No cargo accepted") or _("No inputs")))
 			else
 				for _, result in ipairs(current.suppliers) do
-					add(makeSupplierSection(result, params, selectionState, makeFold("s" .. tostring(result.cargoType), #current.suppliers)))
+					add(makeSupplierSection(result, params, selectionState, makeFold("s" .. tostring(result.cargoType))))
 				end
 			end
 		end
@@ -386,7 +380,7 @@ local NearestList = react.RegisterRecipe("ClosestConsumerList", function(params 
 				add(makeHint(params.isWarehouse and _("No cargo stored or accepted") or _("No outputs")))
 			else
 				for _, result in ipairs(current.consumers) do
-					add(makeConsumerSection(result, params, selectionState, makeFold("c" .. tostring(result.cargoType), #current.consumers)))
+					add(makeConsumerSection(result, params, selectionState, makeFold("c" .. tostring(result.cargoType))))
 				end
 			end
 		end
