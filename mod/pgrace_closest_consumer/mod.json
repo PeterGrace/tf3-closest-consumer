@@ -1,6 +1,6 @@
 {
     "modId": "pgrace_closest_consumer",
-    "revision": 1,
+    "revision": 2,
     "severityAdd": "None",
     "severityRemove": "None",
     "cosmetic": true,
