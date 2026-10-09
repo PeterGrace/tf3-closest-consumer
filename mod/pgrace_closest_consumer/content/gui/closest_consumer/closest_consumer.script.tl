@@ -209,7 +209,7 @@ local function makeFlowRow(entry : ClosestConsumerRank.Ranked, flow : Selection,
 			builtin.ToggleButton{
 				meta = { tooltip = _("Show this flow on the map") },
 				content = builtin.ImageView{
-					path = "::/gui/component/slim_arrow_right.tga",
+					path = "::/gui/entity_window/icons/symbol_arrow_up.tga",
 					scaling = builtin.type.ImageViewScaling.AutoFit,
 				},
 				value = isSelected and 1 or 0,
