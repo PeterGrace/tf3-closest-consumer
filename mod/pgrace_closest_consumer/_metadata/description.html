@@ -1,25 +1,27 @@
-<h2>See where your cargo can go</h2>
-<p>Click any industry or warehouse, and Closest Consumer adds a <b>Nearest consumers</b> card to its window. For each cargo the building sends out, it lists the three closest industries and towns that use that cargo, with the distance to each.</p>
+<h2>Find where your cargo comes from and where it can go</h2>
+<p><i>Formerly Closest Consumer.</i></p>
+<p>Click any industry or warehouse, and Cargo Compass adds a card to its window. It lists the nearest <b>suppliers</b> for each cargo the building takes in, and the nearest <b>consumers</b> for each cargo it sends out, with the distance to each.</p>
 <hr>
 <h3>Features</h3>
 <ul>
-<li><b>Nearest consumers per cargo</b>: the three closest industries or towns that accept each output, sorted by distance.</li>
-<li><b>Show a single flow</b>: the arrow button on a row draws one cargo-flow arrow on the map, from the building to that consumer, and moves the camera so both ends are in view. The arrow is animated if you already deliver cargo there, and faint if you don't yet.</li>
-<li><b>Warehouses too</b>: for a warehouse, the card lists consumers for the cargo it stores. An empty warehouse uses the cargo types its slots accept.</li>
-<li><b>Quick navigation</b>: the locate button moves the camera to a consumer, and clicking its name opens that consumer's window.</li>
+<li><b>Nearest suppliers per input</b>: the three closest industries that produce the cargo, plus the three closest warehouses that have it in stock, shown as separate lists.</li>
+<li><b>Nearest consumers per output</b>: the three closest industries or towns that accept the cargo, sorted by distance.</li>
+<li><b>Show a single flow</b>: the arrow button on a row draws one cargo-flow arrow on the map and moves the camera so both ends are in view. The arrow is animated if that flow already runs, and faint if it doesn't yet.</li>
+<li><b>Warehouses too</b>: a warehouse shows suppliers for every cargo its slots accept, and consumers for the cargo it stores (or, when empty, accepts).</li>
+<li><b>Quick navigation</b>: the locate button moves the camera to a building, and clicking its name opens that building's window.</li>
 </ul>
 <h3>How to use</h3>
 <ol>
 <li>Open the window of an industry or a warehouse.</li>
-<li>Find the <b>Nearest consumers</b> card below the stocks.</li>
+<li>Find the <b>Nearest suppliers &amp; consumers</b> card below the stocks. Industries with only inputs or only outputs show just that half.</li>
 <li>Click the arrow button on a row to show that flow on the map. Click it again, or close the window, to go back to the normal view.</li>
 </ol>
 <h3>Good to know</h3>
 <ul>
 <li>Distances are measured in a straight line, not along roads or tracks.</li>
-<li>Only industries and towns that actually use the cargo are listed. Warehouses are never listed as consumers.</li>
-<li>The list is worked out when the window opens. Reopen the window to refresh it.</li>
-<li>While a flow arrow is shown, it replaces the window's usual map overlay (catchment area and the arrows to all consumers).</li>
-<li>For warehouses, the arrow is always bright and static. The game credits cargo delivered from a warehouse to the industry that originally produced it, so the mod can't tell whether you already supply a consumer from the warehouse.</li>
+<li>Towns never appear as suppliers, because they don't produce freight. Warehouses never appear as consumers.</li>
+<li>Lists, including which warehouses have stock, are worked out when the window opens. Reopen the window to refresh them.</li>
+<li>Only one flow arrow shows at a time. While it's shown, it replaces the window's usual map overlay (catchment area and the arrows to all consumers).</li>
+<li>Arrows to or from a warehouse are always bright and static. The game credits cargo moved through a warehouse to the industry that originally produced it, so the mod can't tell whether that flow already runs.</li>
 <li>This is a cosmetic mod. It doesn't change the simulation, so achievements stay available, and you can add it to or remove it from existing saves.</li>
 </ul>

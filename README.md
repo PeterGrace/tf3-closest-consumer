@@ -1,19 +1,23 @@
-# Closest Consumer (Transport Fever 3 mod)
+# Cargo Compass (Transport Fever 3 mod)
 
-Adds a **Nearest consumers** card to the industry and warehouse info windows.
-For each cargo the building sends out, it lists the three closest industries or
-towns that consume that cargo, with straight-line distances. Each row has the
-game's Locate button, and the consumer's name opens its window.
+Formerly **Closest Consumer**. Adds a card to the industry and warehouse info
+windows. For each cargo the building takes in, it lists the three closest
+producing industries and the three closest warehouses that have the cargo in
+stock. For each cargo it sends out, it lists the three closest industries or
+towns that consume it. Distances are straight-line. Each row has the game's
+Locate button, and the name opens that building's window.
 
 Each row also has a **flow arrow toggle**. It shows a single cargo-flow arrow on
-the map, from the building to that consumer, and frames the camera on both ends.
-The arrow is animated if cargo already flows there; otherwise it's faint and
-static. Only one arrow shows at a time. Toggling it off, or closing the window,
-gives the map back to the window's normal overlay.
+the map, from supplier to receiver, and frames the camera on both ends. The
+arrow is animated if cargo already flows there; otherwise it's faint and static.
+Arrows to or from a warehouse are always bright and static. Only one arrow shows
+at a time. Toggling it off, or closing the window, gives the map back to the
+window's normal overlay.
 
 - Mod ID: `pgrace_closest_consumer`
 - Cosmetic: yes. It doesn't affect the simulation, so achievements stay enabled.
 - Design: [docs/superpowers/specs/2026-10-08-closest-consumer-design.md](docs/superpowers/specs/2026-10-08-closest-consumer-design.md)
+- Supplier design: [docs/superpowers/specs/2026-10-09-nearest-suppliers-design.md](docs/superpowers/specs/2026-10-09-nearest-suppliers-design.md)
 
 ## Layout
 
@@ -25,7 +29,7 @@ mod/pgrace_closest_consumer/          # the mod folder TF3 loads
     ├── industry_plugin.res.lua       # registers the card in the industry window
     ├── warehouse_plugin.res.lua      # registers the card in the warehouse window
     ├── closest_consumer.script.tl    # UI
-    ├── nearest.tl                    # reads game state: cargo, candidates, positions
+    ├── nearest.tl                    # reads game state: cargo, suppliers, consumers, positions
     └── rank.tl                       # pure ranking + distance formatting
 tools/                                # dev tooling (type check, tests, install)
 tests/                                # unit tests for rank.tl
@@ -71,7 +75,7 @@ to re-run `install.sh`, unless you added or removed files: then run
 ## In-game test
 
 1. Start TF3. In the mod selection for a new game or for loading a save, enable
-   **Closest Consumer**. It should be listed from the staging area.
+   **Cargo Compass**. It should be listed from the staging area.
 2. Check the log for the load message:
    ```bash
    grep -h closest_consumer ~/.local/share/Steam/userdata/*/3493540/local/crash_dump/*.txt | tail
@@ -85,14 +89,19 @@ to re-run `install.sh`, unless you added or removed files: then run
    - [ ] Clicking a consumer's name opens its window.
    - [ ] A warehouse holding cargo lists consumers for the cargo it holds, whether or not its slots are pinned.
    - [ ] An empty warehouse lists consumers for the cargo its slots accept.
-   - [ ] A pure consumer (e.g. a power plant) shows no card.
+   - [ ] A pure consumer (e.g. a power plant) shows only **Nearest suppliers**.
    - [ ] The arrow toggle shows exactly one flow arrow and frames both ends; switching rows moves it.
    - [ ] For an industry, the arrow is animated for a consumer already being supplied, and faint and static otherwise.
-   - [ ] For a warehouse, the arrow is always bright and static.
+   - [ ] Arrows to or from a warehouse are always bright and static.
    - [ ] Map clicks still select or open things while an arrow is shown.
    - [ ] Toggling off restores the normal overlay (the catchment circle, and the all-consumer arrows if Output is expanded).
    - [ ] Closing the window with an arrow showing leaves the map normal.
    - [ ] The game's own Stocks and Consumers sections still work as before.
+   - [ ] A processing industry shows **Nearest suppliers & consumers**, with Suppliers first.
+   - [ ] A raw producer (e.g. a farm) shows only **Nearest consumers**, as before.
+   - [ ] A warehouse holding cargo X appears under another building's X suppliers, and disappears after it is emptied and the window reopened.
+   - [ ] A warehouse never lists itself.
+   - [ ] Selecting a supplier arrow and then a consumer arrow leaves exactly one arrow.
 
 ## Releasing
 
@@ -119,7 +128,7 @@ are overwritten on the next upload, so keep both files current.
 
 ## Known limitations
 
-- Warehouse arrows can't show actual vs potential. The engine credits
+- Arrows to or from a warehouse can't show actual vs potential. The engine credits
   deliveries out of a warehouse to the original producer (`itemsTransported`)
   and to the delivering line (`itemsAtDestination`) in the consumer's log
   book. The warehouse only logs load and unload counts. A future version
