@@ -18,6 +18,11 @@ local RESULT_LIMIT = 3
 local FLOW_ACTION_KEY = "closest_consumer_flow"
 local CAMERA_DISTANCE_FACTOR = 1.2
 local CAMERA_MIN_DISTANCE = 500
+-- focusPosition caps the distance at the game's maximum zoom-out (about 4,055 m in testing).
+local CAMERA_MAX_DISTANCE = 4000
+-- How far to move the view toward screen-right, as a fraction of the camera distance, so the arrow is centred
+-- in the map area left of the entity window (about the right quarter of a 16:9 screen).
+local CAMERA_WINDOW_SHIFT = 0.27
 
 local record ListParams
 	entityId : Engine.Entity
@@ -138,13 +143,38 @@ local function makeFlowLayerConfig(from : Vec3f, to : Vec3f, cargoType : CargoTy
 	return layerConfig
 end
 
+-- Moves the camera's look-at point toward screen-right, so the midpoint lands in the middle of the map area
+-- left of the entity window. Screen-right comes from the camera's eye and centre; world2Screen confirms the sign.
+local function shiftClearOfWindow(midpoint : Vec3f, distance : number) : Vec3f
+	local camera = api.gui.camera
+	local eye = camera.getEye()
+	local center = camera.getCenter()
+	local fx, fy = center.x - eye.x, center.y - eye.y
+	local length = math.sqrt(fx * fx + fy * fy)
+	if length < 1e-3 then
+		return midpoint
+	end
+	local rx, ry = fy / length, -fx / length
+	local probe = api.type.Vec3f.new(center.x + 100 * rx, center.y + 100 * ry, center.z)
+	if camera.world2Screen(probe).x < camera.world2Screen(center).x then
+		rx, ry = -rx, -ry
+	end
+	local shift = CAMERA_WINDOW_SHIFT * math.min(distance, CAMERA_MAX_DISTANCE)
+	return api.type.Vec3f.new(midpoint.x + shift * rx, midpoint.y + shift * ry, midpoint.z)
+end
+
 local function frameCamera(from : Vec3f, to : Vec3f)
 	local dx = to.x - from.x
 	local dy = to.y - from.y
 	local gap = math.sqrt(dx * dx + dy * dy)
 	local distance = math.max(CAMERA_MIN_DISTANCE, gap * CAMERA_DISTANCE_FACTOR)
 	local midpoint = api.type.Vec3f.new(0.5 * (from.x + to.x), 0.5 * (from.y + to.y), 0.5 * (from.z + to.z))
-	api.gui.camera.focusPosition(midpoint, distance)
+	local ok, target = pcall(shiftClearOfWindow, midpoint, distance)
+	if not ok then
+		debugPrint("[closest_consumer] camera shift failed: " .. tostring(target))
+		target = midpoint
+	end
+	api.gui.camera.focusPosition(target as Vec3f, distance)
 end
 
 -- Binds a map action that draws one flow arrow and makes it the renderer's active owner override.
