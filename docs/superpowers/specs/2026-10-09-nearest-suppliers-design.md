@@ -71,6 +71,8 @@ Suppliers
   the user preferred one consistent rule.)
 - What the player opens is remembered only while the window stays open.
 - Collapsing a cargo keeps its arrow on, if one is shown.
+- Cargo blocks are ordered by their nearest distance (`rank.orderByNearest`). Cargo with nothing on the map goes
+  last, and ties keep cargo-id order.
 
 ## Logic (`nearest.tl`)
 

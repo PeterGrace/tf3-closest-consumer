@@ -69,6 +69,18 @@ local record ListState
 	failed : boolean
 end
 
+-- Distance of the closest entry across the given (already sorted) lists; nil when all are empty.
+local function nearestOf(lists : {{ClosestConsumerRank.Ranked}}) : number
+	local best : number = nil
+	for _, list in ipairs(lists) do
+		local first = list[1]
+		if first ~= nil and (best == nil or first.distance < best) then
+			best = first.distance
+		end
+	end
+	return best
+end
+
 local function computeState(params : ListParams) : ListState
 	local state : ListState = { suppliers = {}, consumers = {}, failed = false }
 	if params.showSuppliers then
@@ -89,6 +101,13 @@ local function computeState(params : ListParams) : ListState
 			state.failed = true
 		end
 	end
+	-- Nearest cargo first, so long lists (warehouses) lead with the closest options.
+	state.suppliers = rank.orderByNearest(state.suppliers, function(result : ClosestConsumerNearest.SupplyResult) : number
+		return nearestOf({ result.producers, result.warehouses })
+	end)
+	state.consumers = rank.orderByNearest(state.consumers, function(result : ClosestConsumerNearest.CargoResult) : number
+		return nearestOf({ result.consumers })
+	end)
 	return state
 end
 
@@ -243,18 +262,6 @@ local function makeCargoHeader(cargoType : CargoTypeId, nearestDistance : number
 		},
 		onClick = fold.toggle,
 	}
-end
-
--- Distance of the closest entry across the given (already sorted) lists; nil when all are empty.
-local function nearestOf(lists : {{ClosestConsumerRank.Ranked}}) : number
-	local best : number = nil
-	for _, list in ipairs(lists) do
-		local first = list[1]
-		if first ~= nil and (best == nil or first.distance < best) then
-			best = first.distance
-		end
-	end
-	return best
 end
 
 local function makeConsumerSection(result : ClosestConsumerNearest.CargoResult, params : ListParams, selectionState : ReactStateT<Selection>, fold : Fold) : TreeNodeId

@@ -56,3 +56,21 @@ t.test("nearest: carries town flag and name through", function()
 	t.eq(r[1].name, "Esslingen")
 	t.eq(r[1].entity, 7)
 end)
+
+t.test("orderByNearest: sorts by distance, missing distances last, ties keep input order", function()
+	local items = {
+		{ id = 1, d = 900 },
+		{ id = 2, d = nil },
+		{ id = 3, d = 120 },
+		{ id = 4, d = 900 },
+		{ id = 5, d = nil },
+	}
+	local r = rank.orderByNearest(items, function(item) return item.d end)
+	t.eq(#r, 5)
+	t.eq(r[1].id, 3)
+	t.eq(r[2].id, 1)
+	t.eq(r[3].id, 4)
+	t.eq(r[4].id, 2)
+	t.eq(r[5].id, 5)
+	t.eq(items[1].id, 1, "input left unchanged")
+end)
