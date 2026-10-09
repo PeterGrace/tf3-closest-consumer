@@ -202,7 +202,9 @@ local FlowAction = react.RegisterRecipe("ClosestConsumerFlowAction", function(pa
 		cacheRef:set({ key = key, action = action })
 	end
 
-	local selfRef = react.useAction(params.gameCtx.rendererComponent, cacheRef:get().action, FLOW_ACTION_KEY)
+	-- One action key per arrow: switching arrows while bound under a single key kept the old arrow on screen
+	-- (the renderer only picked the new one up after a fresh mount).
+	local selfRef = react.useAction(params.gameCtx.rendererComponent, cacheRef:get().action, FLOW_ACTION_KEY .. ":" .. key)
 
 	local function setOverride(owner : ReactRefWrap | boolean) : boolean
 		if params.gameCtx.rendererComponent:hasExpired() then
