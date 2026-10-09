@@ -5,7 +5,9 @@ windows. For each cargo the building takes in, it lists the three closest
 producing industries and the three closest warehouses that have the cargo in
 stock. For each cargo it sends out, it lists the three closest industries or
 towns that consume it. Distances are straight-line. Each row has the game's
-Locate button, and the name opens that building's window.
+Locate button, and the name opens that building's window. Each cargo starts
+collapsed, with the distance to its nearest match on the header; click it to
+expand.
 
 Each row also has a **flow arrow toggle**. It shows a single cargo-flow arrow on
 the map, from supplier to receiver, and frames the camera on both ends. The
@@ -97,6 +99,7 @@ to re-run `install.sh`, unless you added or removed files: then run
    - [ ] Toggling off restores the normal overlay (the catchment circle, and the all-consumer arrows if Output is expanded).
    - [ ] Closing the window with an arrow showing leaves the map normal.
    - [ ] The game's own Stocks and Consumers sections still work as before.
+   - [ ] Every cargo block starts collapsed with its nearest distance shown, and expands on click.
    - [ ] A processing industry shows **Nearest suppliers & consumers**, with Suppliers first.
    - [ ] A raw producer (e.g. a farm) shows only **Nearest consumers**, as before.
    - [ ] A warehouse holding cargo X appears under another building's X suppliers, and disappears after it is emptied and the window reopened.
