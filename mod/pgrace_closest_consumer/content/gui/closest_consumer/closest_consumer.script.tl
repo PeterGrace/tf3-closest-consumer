@@ -22,25 +22,28 @@ local CAMERA_MIN_DISTANCE = 500
 local record ListParams
 	entityId : Engine.Entity
 	isWarehouse : boolean
+	showSuppliers : boolean
+	showConsumers : boolean
 	gameCtx : GameContext
 end
 
--- The consumer whose flow arrow is shown; nil when none is.
+-- The flow whose arrow is shown; nil when none is. `from` sends the cargo, `to` receives it.
 local record Selection
-	consumer : Engine.Entity
+	from : Engine.Entity
+	to : Engine.Entity
 	cargoType : CargoTypeId
-	isTown : boolean
+	toIsTown : boolean
+	-- Either end is a warehouse, whose deliveries the cargo logs don't record.
+	viaWarehouse : boolean
 end
 
 local record FlowParams
 	gameCtx : GameContext
-	source : Engine.Entity
-	sourceIsWarehouse : boolean
 	selection : Selection
 end
 
 -- "Actual" (animated) when cargo already flows there, "Potential" (static, faint) when not.
--- "Unknown" for warehouses: the engine credits deliveries out of a warehouse to the original producer and the
+-- "Unknown" when either end is a warehouse: the engine credits warehouse deliveries to the original producer and the
 -- delivering line, never to the warehouse, so we can't tell. Bright like Actual, but static so it claims no flow.
 local enum FlowStyle
 	"Actual"
@@ -61,21 +64,40 @@ local record FlowCache
 end
 
 local record ListState
-	results : {ClosestConsumerNearest.CargoResult}
+	suppliers : {ClosestConsumerNearest.SupplyResult}
+	consumers : {ClosestConsumerNearest.CargoResult}
 	failed : boolean
 end
 
-local function computeState(entity : Engine.Entity) : ListState
-	local ok, resultsOrError = pcall(nearest.findNearestConsumers, entity, RESULT_LIMIT)
-	if ok then
-		return { results = resultsOrError as {ClosestConsumerNearest.CargoResult}, failed = false }
+local function computeState(params : ListParams) : ListState
+	local state : ListState = { suppliers = {}, consumers = {}, failed = false }
+	if params.showSuppliers then
+		local ok, resultsOrError = pcall(nearest.findNearestSuppliers, params.entityId, RESULT_LIMIT)
+		if ok then
+			state.suppliers = resultsOrError as {ClosestConsumerNearest.SupplyResult}
+		else
+			debugPrint("[closest_consumer] error (suppliers) for entity " .. tostring(params.entityId) .. ": " .. tostring(resultsOrError))
+			state.failed = true
+		end
 	end
-	debugPrint("[closest_consumer] error for entity " .. tostring(entity) .. ": " .. tostring(resultsOrError))
-	return { results = {}, failed = true }
+	if params.showConsumers then
+		local ok, resultsOrError = pcall(nearest.findNearestConsumers, params.entityId, RESULT_LIMIT)
+		if ok then
+			state.consumers = resultsOrError as {ClosestConsumerNearest.CargoResult}
+		else
+			debugPrint("[closest_consumer] error (consumers) for entity " .. tostring(params.entityId) .. ": " .. tostring(resultsOrError))
+			state.failed = true
+		end
+	end
+	return state
 end
 
 local function makeHint(text : string) : TreeNodeId
 	return builtin.TextView{ meta = { class = "font-scale-annotation" }, text = text }
+end
+
+local function makeLabel(text : string, class : string) : TreeNodeId
+	return builtin.TextView{ meta = { class = class }, text = text }
 end
 
 -- Styled like the base industry window's consumer arrows.
@@ -109,18 +131,23 @@ end
 -- Binds a map action that draws one flow arrow and makes it the renderer's active owner override.
 -- Unmounting clears the override and unbinds the action, handing the map back to the industry window's own action.
 local FlowAction = react.RegisterRecipe("ClosestConsumerFlowAction", function(params : FlowParams) : TreeNodeId
-	local key = tostring(params.source) .. ">" .. tostring(params.selection.consumer) .. ":" .. tostring(params.selection.cargoType)
+	local selection = params.selection
+	local key = tostring(selection.from) .. ">" .. tostring(selection.to) .. ":" .. tostring(selection.cargoType)
 	local cacheRef : ReactRefT<FlowCache> = react.useRef(nil)
 	local changed = cacheRef:get() == nil or cacheRef:get().key ~= key
 	if changed then
-		local from = nearest.getPosition3(params.source)
-		local to = nearest.getPosition3(params.selection.consumer)
+		local from = nearest.getPosition3(selection.from)
+		local to = nearest.getPosition3(selection.to)
 		local action : function() : TreeNodeId = nil
 		if from ~= nil and to ~= nil then
-			local selection = params.selection
 			local style : FlowStyle = "Unknown"
-			if not params.sourceIsWarehouse then
-				local count = cargo_util.getCargoFlowCount(params.source, selection.consumer, selection.cargoType, selection.isTown)
+			if selection.viaWarehouse then
+				-- PROBE (remove before release): does either log direction record warehouse deliveries?
+				debugPrint(string.format("[closest_consumer] probe %s itemsTransported fwd=%d rev=%d", key,
+					api.engine.util.stock.getCargoLogPerYearForTarget(selection.from, selection.to, "itemsTransported", selection.cargoType),
+					api.engine.util.stock.getCargoLogPerYearForTarget(selection.to, selection.from, "itemsTransported", selection.cargoType)))
+			else
+				local count = cargo_util.getCargoFlowCount(selection.from, selection.to, selection.cargoType, selection.toIsTown)
 				style = count > 0 and "Actual" or "Potential"
 			end
 			action = selector_react_util.makeDefaultSelectorAction(params.gameCtx, makeFlowLayerConfig(from, to, selection.cargoType, style))
@@ -165,17 +192,18 @@ local FlowAction = react.RegisterRecipe("ClosestConsumerFlowAction", function(pa
 	return builtin.BoxLayout{ children = {} }
 end)
 
-local function makeConsumerRow(consumer : ClosestConsumerRank.Ranked, cargoType : CargoTypeId, selectionState : ReactStateT<Selection>) : TreeNodeId
-	local label = consumer.name
-	if consumer.isTown then
+-- One row: locate, flow toggle, name (opens its window), distance. `flow` is the selection the toggle sets.
+local function makeFlowRow(entry : ClosestConsumerRank.Ranked, flow : Selection, selectionState : ReactStateT<Selection>) : TreeNodeId
+	local label = entry.name
+	if entry.isTown then
 		label = label .. " " .. _("(town)")
 	end
 	local current = selectionState:old()
-	local isSelected = current ~= nil and current.consumer == consumer.entity and current.cargoType == cargoType
+	local isSelected = current ~= nil and current.from == flow.from and current.to == flow.to and current.cargoType == flow.cargoType
 	return builtin.BoxLayout{
 		orientation = builtin.type.Orientation.Horizontal,
 		children = {
-			line_react_util.LocateButton{ entity = consumer.entity },
+			line_react_util.LocateButton{ entity = entry.entity },
 			builtin.ToggleButton{
 				meta = { tooltip = _("Show this flow on the map") },
 				content = builtin.ImageView{
@@ -185,41 +213,83 @@ local function makeConsumerRow(consumer : ClosestConsumerRank.Ranked, cargoType 
 				value = isSelected and 1 or 0,
 				onValueChange = function(value : integer)
 					if value == 1 then
-						selectionState:set({ consumer = consumer.entity, cargoType = cargoType, isTown = consumer.isTown })
+						selectionState:set(flow)
 					else
 						selectionState:set(nil)
 					end
 				end,
 			},
-			line_react_util.makeEntityWindowButton(label, consumer.entity),
-			builtin.TextView{ text = rank.formatDistance(consumer.distance) },
+			line_react_util.makeEntityWindowButton(label, entry.entity),
+			builtin.TextView{ text = rank.formatDistance(entry.distance) },
 		},
 	}
 end
 
-local function makeCargoSection(result : ClosestConsumerNearest.CargoResult, selectionState : ReactStateT<Selection>) : TreeNodeId
-	local children : {TreeNodeId} = {
-		builtin.BoxLayout{
-			orientation = builtin.type.Orientation.Horizontal,
-			children = {
-				cargo_react_util.makeCargoIcon(result.cargoType),
-				builtin.TextView{ text = cargo_util.getCargoNameById(result.cargoType) },
-			},
+local function makeCargoHeader(cargoType : CargoTypeId) : TreeNodeId
+	return builtin.BoxLayout{
+		orientation = builtin.type.Orientation.Horizontal,
+		children = {
+			cargo_react_util.makeCargoIcon(cargoType),
+			builtin.TextView{ text = cargo_util.getCargoNameById(cargoType) },
 		},
 	}
+end
+
+local function makeConsumerSection(result : ClosestConsumerNearest.CargoResult, params : ListParams, selectionState : ReactStateT<Selection>) : TreeNodeId
+	local children : {TreeNodeId} = { makeCargoHeader(result.cargoType) }
 	if #result.consumers == 0 then
 		children[#children + 1] = makeHint(_("No consumers on this map"))
 	else
 		for _, consumer in ipairs(result.consumers) do
-			children[#children + 1] = makeConsumerRow(consumer, result.cargoType, selectionState)
+			children[#children + 1] = makeFlowRow(consumer, {
+				from = params.entityId,
+				to = consumer.entity,
+				cargoType = result.cargoType,
+				toIsTown = consumer.isTown,
+				viaWarehouse = params.isWarehouse,
+			}, selectionState)
 		end
 	end
 	return builtin.BoxLayout{ orientation = builtin.type.Orientation.Vertical, children = children }
 end
 
-local NearestConsumersList = react.RegisterRecipe("ClosestConsumerList", function(params : ListParams) : TreeNodeId
+local function makeSupplierSection(result : ClosestConsumerNearest.SupplyResult, params : ListParams, selectionState : ReactStateT<Selection>) : TreeNodeId
+	local children : {TreeNodeId} = {
+		makeCargoHeader(result.cargoType),
+		makeLabel(_("Producers"), "font-scale-annotation"),
+	}
+	if #result.producers == 0 then
+		children[#children + 1] = makeHint(_("No producers on this map"))
+	else
+		for _, producer in ipairs(result.producers) do
+			children[#children + 1] = makeFlowRow(producer, {
+				from = producer.entity,
+				to = params.entityId,
+				cargoType = result.cargoType,
+				toIsTown = false,
+				viaWarehouse = params.isWarehouse,
+			}, selectionState)
+		end
+	end
+	if #result.warehouses > 0 then
+		children[#children + 1] = makeLabel(_("Warehouses (in stock)"), "font-scale-annotation")
+		for _, warehouse in ipairs(result.warehouses) do
+			children[#children + 1] = makeFlowRow(warehouse, {
+				from = warehouse.entity,
+				to = params.entityId,
+				cargoType = result.cargoType,
+				toIsTown = false,
+				viaWarehouse = true,
+			}, selectionState)
+		end
+	end
+	return builtin.BoxLayout{ orientation = builtin.type.Orientation.Vertical, children = children }
+end
+
+-- Both directions live in one list so that one selection state allows at most one flow arrow per window.
+local NearestList = react.RegisterRecipe("ClosestConsumerList", function(params : ListParams) : TreeNodeId
 	local state = react.useStateLazy(function() : ListState
-		return computeState(params.entityId)
+		return computeState(params)
 	end)
 	local current = state:old()
 	local selectionState = react.useStateLazy(function() : Selection
@@ -227,59 +297,98 @@ local NearestConsumersList = react.RegisterRecipe("ClosestConsumerList", functio
 	end)
 
 	local children : {TreeNodeId} = {}
+	local function add(node : TreeNodeId)
+		children[#children + 1] = node
+	end
+	-- Headings only when both sections show; otherwise the card title says it all.
+	local both = params.showSuppliers and params.showConsumers
 	if current.failed then
-		children[1] = makeHint(_("Closest consumer: error (see log)"))
-	elseif #current.results == 0 then
-		children[1] = makeHint(params.isWarehouse and _("No cargo stored or accepted") or _("No outputs"))
+		add(makeHint(_("Cargo Compass: error (see log)")))
 	else
-		for _, result in ipairs(current.results) do
-			children[#children + 1] = makeCargoSection(result, selectionState)
+		if params.showSuppliers then
+			if both then
+				add(makeLabel(_("Suppliers"), "font-scale-title-4"))
+			end
+			if #current.suppliers == 0 then
+				add(makeHint(params.isWarehouse and _("No cargo accepted") or _("No inputs")))
+			else
+				for _, result in ipairs(current.suppliers) do
+					add(makeSupplierSection(result, params, selectionState))
+				end
+			end
+		end
+		if params.showConsumers then
+			if both then
+				add(makeLabel(_("Consumers"), "font-scale-title-4"))
+			end
+			if #current.consumers == 0 then
+				add(makeHint(params.isWarehouse and _("No cargo stored or accepted") or _("No outputs")))
+			else
+				for _, result in ipairs(current.consumers) do
+					add(makeConsumerSection(result, params, selectionState))
+				end
+			end
 		end
 	end
 	if selectionState:old() ~= nil then
-		children[#children + 1] = FlowAction{
-			gameCtx = params.gameCtx,
-			source = params.entityId,
-			sourceIsWarehouse = params.isWarehouse,
-			selection = selectionState:old(),
-		}
+		add(FlowAction{ gameCtx = params.gameCtx, selection = selectionState:old() })
 	end
 	return builtin.BoxLayout{ orientation = builtin.type.Orientation.Vertical, children = children }
 end)
 
-local function makeCard(entityId : Engine.Entity, isWarehouse : boolean, gameCtx : GameContext, showOnRightSide : boolean) : TreeNodeId
+local function makeCard(params : ListParams, showOnRightSide : boolean) : TreeNodeId
+	local title = _("Nearest consumers")
+	if params.showSuppliers and params.showConsumers then
+		title = _("Nearest suppliers & consumers")
+	elseif params.showSuppliers then
+		title = _("Nearest suppliers")
+	end
 	return builtin.BoxLayout{
 		child = content_card.ContentCard{
-			title = _("Nearest consumers"),
+			title = title,
 			initialCalloutTextPermanent = "",
-			recipeAndParamPermanent = content_card.makeRecipeAndParam(NearestConsumersList, {
-				entityId = entityId,
-				isWarehouse = isWarehouse,
-				gameCtx = gameCtx,
-			} as ListParams),
-			gameCtx = gameCtx,
+			recipeAndParamPermanent = content_card.makeRecipeAndParam(NearestList, params),
+			gameCtx = params.gameCtx,
 			showOnRightSide = showOnRightSide,
 		},
 	}
 end
 
+-- Which sections an industry gets. On error, both show so the card can report it.
+local function getIndustryParams(entityId : Engine.Entity, gameCtx : GameContext) : ListParams
+	local okInputs, inputs = pcall(nearest.getInputCargoTypes, entityId)
+	local okOutputs, outputs = pcall(nearest.getSourceCargoTypes, entityId)
+	return {
+		entityId = entityId,
+		isWarehouse = false,
+		showSuppliers = not okInputs or #(inputs as {CargoTypeId}) > 0,
+		showConsumers = not okOutputs or #(outputs as {CargoTypeId}) > 0,
+		gameCtx = gameCtx,
+	}
+end
+
 local IndustryPlugin = react.RegisterPluginRecipe(industry_eow.IndustryEowExtensionPoint, "ClosestConsumerIndustryPlugin", function(params : IndustryEow.IndustryWidgetPluginParams) : TreeNodeId
-	return makeCard(params.entityId, false, params.gameCtx, params.showCalloutOnRightSide)
+	return makeCard(getIndustryParams(params.entityId, params.gameCtx), params.showCalloutOnRightSide)
 end)
 
 local WarehousePlugin = react.RegisterPluginRecipe(warehouse_eow.WarehouseEowExtensionPoint, "ClosestConsumerWarehousePlugin", function(params : WarehouseEow.WarehouseWidgetPluginParams) : TreeNodeId
-	return makeCard(params.entityId, true, params.gameCtx, params.showCalloutOnRightSide)
+	return makeCard({
+		entityId = params.entityId,
+		isWarehouse = true,
+		showSuppliers = true,
+		showConsumers = true,
+		gameCtx = params.gameCtx,
+	}, params.showCalloutOnRightSide)
 end)
 
--- Hides the card for industries that produce nothing (e.g. pure consumers).
--- On error it returns true, so that the card can show the error hint.
-local function hasOutputs(params : IndustryEow.IndustryWidgetPluginParams) : boolean
-	local ok, cargoTypes = pcall(nearest.getSourceCargoTypes, params.entityId)
-	return not ok or #(cargoTypes as {CargoTypeId}) > 0
+-- Hides the card for industries with neither inputs nor outputs.
+local function hasCargo(params : IndustryEow.IndustryWidgetPluginParams) : boolean
+	local listParams = getIndustryParams(params.entityId, params.gameCtx)
+	return listParams.showSuppliers or listParams.showConsumers
 end
 
 return {
 	IndustryPlugin = IndustryPlugin,
 	WarehousePlugin = WarehousePlugin,
-	hasOutputs = hasOutputs,
+	hasCargo = hasCargo,
 }
