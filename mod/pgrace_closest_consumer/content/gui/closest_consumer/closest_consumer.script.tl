@@ -254,10 +254,12 @@ local function makeConsumerSection(result : ClosestConsumerNearest.CargoResult, 
 end
 
 local function makeSupplierSection(result : ClosestConsumerNearest.SupplyResult, params : ListParams, selectionState : ReactStateT<Selection>) : TreeNodeId
-	local children : {TreeNodeId} = {
-		makeCargoHeader(result.cargoType),
-		makeLabel(_("Producers"), "font-scale-annotation"),
-	}
+	local children : {TreeNodeId} = { makeCargoHeader(result.cargoType) }
+	-- The sub-list labels only matter when both lists show.
+	local hasWarehouses = #result.warehouses > 0
+	if hasWarehouses then
+		children[#children + 1] = makeLabel(_("Producers"), "font-scale-annotation")
+	end
 	if #result.producers == 0 then
 		children[#children + 1] = makeHint(_("No producers on this map"))
 	else
@@ -271,7 +273,7 @@ local function makeSupplierSection(result : ClosestConsumerNearest.SupplyResult,
 			}, selectionState)
 		end
 	end
-	if #result.warehouses > 0 then
+	if hasWarehouses then
 		children[#children + 1] = makeLabel(_("Warehouses (in stock)"), "font-scale-annotation")
 		for _, warehouse in ipairs(result.warehouses) do
 			children[#children + 1] = makeFlowRow(warehouse, {
