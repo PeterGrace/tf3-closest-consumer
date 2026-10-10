@@ -1,6 +1,7 @@
 {
     "archives": null,
     "files": [
+        "gui/closest_consumer/arrow_label.css.lua",
         "gui/closest_consumer/closest_consumer.script.tl",
         "gui/closest_consumer/industry_plugin.res.lua",
         "gui/closest_consumer/nearest.d.tl",

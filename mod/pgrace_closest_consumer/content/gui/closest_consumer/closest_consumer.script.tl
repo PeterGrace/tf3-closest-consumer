@@ -6,6 +6,8 @@ local cargo_util = ug_require "::/gui/main/cargo_util.tl" as CargoUtil
 local line_react_util = ug_require "::/gui/line_vehicle_mgmt/line_react_util.tl" as LineReactUtil
 local selector_react_util = ug_require "::/gui/main/selector_react_util.tl" as SelectorReactUtil
 local color_util = ug_require "::/gui/main/color_util.tl" as ColorUtil
+local callout_react_util = ug_require "::/gui/main/callout_react_util.tl" as CalloutReactUtil
+local styleutil = ug_require "::/gui/main/styleutil.tl" as StyleUtil
 local industry_eow = ug_require "::/gui/entity_window/industry/industry_eow.script.tl" as IndustryEow
 local warehouse_eow = ug_require "::/gui/entity_window/warehouse/warehouse_eow.script.tl" as WarehouseEow
 local nearest = ug_require "pgrace_closest_consumer::/gui/closest_consumer/nearest.tl" as ClosestConsumerNearest
@@ -23,6 +25,9 @@ local CAMERA_MAX_DISTANCE = 4000
 -- How far to move the view toward screen-right, as a fraction of the camera distance, so the arrow is centred
 -- in the map area left of the entity window (about the right quarter of a 16:9 screen).
 local CAMERA_WINDOW_SHIFT = 0.27
+-- The cargo-flow arrow is drawn as an arc this high (as a share of its length); the distance label sits on its top.
+-- Measured by eye in Commuter Compass; it matched both short and long arrows.
+local ARROW_ARC_HEIGHT = 0.06
 
 local record ListParams
 	entityId : Engine.Entity
@@ -125,6 +130,82 @@ local function makeLabel(text : string, class : string) : TreeNodeId
 end
 
 -- Styled like the base industry window's consumer arrows.
+local function planarDistance(a : Vec3f, b : Vec3f) : number
+	local dx, dy = b.x - a.x, b.y - a.y
+	return math.sqrt(dx * dx + dy * dy)
+end
+
+local record ArrowLabelParams is IRecipeParamWithMeta
+	text : string
+end
+
+local ArrowLabel = react.RegisterRecipe("ClosestConsumerArrowLabel", function(params : ArrowLabelParams) : TreeNodeId
+	return builtin.BoxLayout{
+		children = { builtin.TextView{ meta = { class = "font-scale-body" }, text = params.text } },
+	}
+end)
+
+local record ArrowLabelLayerParams
+	from : Vec3f
+	to : Vec3f
+	text : string
+end
+
+-- The arrow's distance, drawn at the top of its arc. A full-screen layer of the arrow's own map action (as the town
+-- window draws its layer legend), so it comes and goes with the arrow and other popups can't displace it.
+local ArrowLabelLayer = react.RegisterRecipe("ClosestConsumerArrowLabelLayer", function(params : ArrowLabelLayerParams) : TreeNodeId
+	react.setMouseTransparent(true)
+	react.setDisableFocusable(true)
+	local a, b = params.from, params.to
+	local lift = ARROW_ARC_HEIGHT * planarDistance(a, b)
+	local top = api.type.Vec3f.new(0.5 * (a.x + b.x), 0.5 * (a.y + b.y), 0.5 * (a.z + b.z) + lift)
+	-- Where the label goes, in fractions of the screen; nil while unknown or behind the camera.
+	local positionState : ReactStateT<Vec2f> = react.useState(nil)
+	react.onStep(function()
+		-- world2Screen is restricted during the react step ("API is currently restricted"), so it runs in a join on
+		-- the main thread, as the base mission task list does with api.gui.byId.
+		react.enqueueJoin(function()
+			local ok, point = pcall(api.gui.camera.world2Screen, top)
+			local sizeOk, size = pcall(api.gui.camera.getSize)
+			if not ok or not sizeOk or point == nil or size == nil then
+				return
+			end
+			local pixel, viewport = point as Vec2i, size as Vec2i
+			if viewport.x <= 0 or viewport.y <= 0 then
+				return
+			end
+			-- world2Screen gives viewport pixels; the floating layout places things in fractions of the screen.
+			local h, v = pixel.x / viewport.x, pixel.y / viewport.y
+			local old = positionState:old()
+			if old == nil or old.x ~= h or old.y ~= v then
+				positionState:set(api.type.Vec2f.new(h, v))
+			end
+		end, "ClosestConsumerArrowLabelLayer")
+	end)
+	local position = positionState:old()
+	if position == nil or position.x < 0 or position.x > 1 or position.y < 0 or position.y > 1 then
+		return builtin.FloatingLayout{ children = {} }
+	end
+	-- arrow_label.css.lua makes this floating layout fill the screen (gravity -1, -1), as the game's stylesheet does
+	-- for the callout container; then h and v place the label anywhere on it.
+	return builtin.FloatingLayout{
+		children = {
+			builtin.FloatingLayoutChild{
+				h = position.x,
+				v = position.y,
+				-- Keeps the label on screen near the edges, as the callout container does. (The tealdef types this field
+				-- as boolean, but the game passes the enum.)
+				overflowMode = builtin.type.FloatingLayoutOverflowMode.KeepInside as any as boolean,
+				item = callout_react_util.DefaultCalloutWrapper{
+					meta = { styleSheet = styleutil.makeStyle{ anchorPoint = api.type.Vec2f.new(0.5, 0.5) } },
+					recipe = ArrowLabel,
+					recipeParam = { text = params.text } as ArrowLabelParams,
+				},
+			},
+		},
+	}
+end)
+
 local function makeFlowLayerConfig(from : Vec3f, to : Vec3f, cargoType : CargoTypeId, style : FlowStyle) : LayerConfig
 	local colors = layerColors.CargoFlow.Consumers3D
 	local flow = api.type.LayerConfig.CargoFlowRenderableConfig.FlowData.new()
@@ -194,7 +275,14 @@ local FlowAction = react.RegisterRecipe("ClosestConsumerFlowAction", function(pa
 				local count = cargo_util.getCargoFlowCount(selection.from, selection.to, selection.cargoType, selection.toIsTown)
 				style = count > 0 and "Actual" or "Potential"
 			end
-			action = selector_react_util.makeDefaultSelectorAction(params.gameCtx, makeFlowLayerConfig(from, to, selection.cargoType, style))
+			local text = rank.formatDistance(planarDistance(from, to))
+			action = selector_react_util.makeDefaultSelectorAction(params.gameCtx, makeFlowLayerConfig(from, to, selection.cargoType, style),
+				nil, function() : TreeNodeId
+					return builtin.FullScreenComponent{
+						recipe = ArrowLabelLayer,
+						param = { from = from, to = to, text = text } as ArrowLabelLayerParams,
+					}
+				end)
 			frameCamera(from, to)
 		else
 			debugPrint("[closest_consumer] flow: no position for " .. key)

@@ -14,7 +14,8 @@ the map, from supplier to receiver, and frames the camera on both ends. The
 arrow is animated if cargo already flows there; otherwise it's faint and static.
 Arrows to or from a warehouse are always bright and static. Only one arrow shows
 at a time. Toggling it off, or closing the window, gives the map back to the
-window's normal overlay.
+window's normal overlay. The arrow's distance is shown in a light blue label at
+the top of its arc.
 
 - Mod ID: `pgrace_closest_consumer`
 - Cosmetic: yes. It doesn't affect the simulation, so achievements stay enabled.
@@ -30,7 +31,8 @@ mod/pgrace_closest_consumer/          # the mod folder TF3 loads
 └── content/gui/closest_consumer/
     ├── industry_plugin.res.lua       # registers the card in the industry window
     ├── warehouse_plugin.res.lua      # registers the card in the warehouse window
-    ├── closest_consumer.script.tl    # UI
+    ├── closest_consumer.script.tl    # UI, the map arrow and its distance label
+    ├── arrow_label.css.lua           # lets the distance label's layer fill the screen; the label's colours
     ├── nearest.tl                    # reads game state: cargo, suppliers, consumers, positions
     └── rank.tl                       # pure ranking + distance formatting
 tools/                                # dev tooling (type check, tests, install)
@@ -99,6 +101,8 @@ to re-run `install.sh`, unless you added or removed files: then run
    - [ ] Map clicks still select or open things while an arrow is shown.
    - [ ] Toggling off restores the normal overlay (the catchment circle, and the all-consumer arrows if Output is expanded).
    - [ ] Closing the window with an arrow showing leaves the map normal.
+   - [ ] The arrow shows its distance in a light blue label at the top of its arc. It follows pan, tilt and zoom,
+     survives popups such as a town's celebration, changes with the arrow, and goes away with it.
    - [ ] The game's own Stocks and Consumers sections still work as before.
    - [ ] Every cargo block starts collapsed with its nearest distance shown, and expands on click.
    - [ ] A processing industry shows **Nearest suppliers & consumers**, with Suppliers first.
