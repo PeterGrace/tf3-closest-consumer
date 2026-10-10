@@ -103,6 +103,8 @@ to re-run `install.sh`, unless you added or removed files: then run
    - [ ] Closing the window with an arrow showing leaves the map normal.
    - [ ] The arrow shows its distance in a light blue label at the top of its arc. It follows pan, tilt and zoom,
      survives popups such as a town's celebration, changes with the arrow, and goes away with it.
+   - [ ] Translations: in German the card reads "Nächste Lieferanten & Abnehmer" and distances "2,2 km"; in a CJK
+     language the text renders (no boxes); back in English nothing changed.
    - [ ] The game's own Stocks and Consumers sections still work as before.
    - [ ] Every cargo block starts collapsed with its nearest distance shown, and expands on click.
    - [ ] A processing industry shows **Nearest suppliers & consumers**, with Suppliers first.
@@ -110,6 +112,24 @@ to re-run `install.sh`, unless you added or removed files: then run
    - [ ] A warehouse holding cargo X appears under another building's X suppliers, and disappears after it is emptied and the window reopened.
    - [ ] A warehouse never lists itself.
    - [ ] Selecting a supplier arrow and then a consumer arrow leaves exactly one arrow.
+
+## Translations
+
+Text shown in the game is wrapped in `_("...")`; the English text is the key. Translations live in
+`mod/pgrace_closest_consumer/strings.json`, one block per language, for all 12 languages TF3 ships besides English
+(de, es, fr, it, ja, ko, nl, pl, pt_BR, ru, zh_CN, zh_TW), with terms from the base game's own translations
+(`base/strings/<lang>/LC_MESSAGES/base.mo`). They're a best effort by a non-native speaker.
+
+`just release-check` fails if a language lacks a key or a translation drops a `{placeholder}`, and warns about
+entries no longer used. Distances use the game's formatter (`api.util.formatLength`), so they follow the player's
+language and units ("2,2 km", or miles). Cargo names come from the game, already translated. The Mod Hub summary and
+description are translated under `localization` in `_metadata/modinfo.json`; `description.html` stays English.
+
+There are no counted nouns, so no plural forms yet. If one is added, use Commuter Compass's approach: one key per
+plural form (`"{count} towns|one"`, `"|few"`, ...) picked by its `rank.pluralCategory`; the release check already
+knows each language's forms.
+
+To add a language: copy a block in `strings.json`, change the code, translate the values, and run `just verify`.
 
 ## Releasing
 

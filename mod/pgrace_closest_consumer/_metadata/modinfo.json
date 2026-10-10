@@ -8,6 +8,68 @@
     "name": "Cargo Compass",
     "summary": "Lists the nearest suppliers and consumers for each cargo, and shows a single flow arrow on the map.",
     "description": "(Formerly Closest Consumer.) Click any industry or warehouse, and Cargo Compass adds a card to its window that shows where each cargo can come from and where it can go.\n\n- Suppliers: for each input cargo, the three closest industries that produce it, plus the three closest warehouses that have it in stock.\n- Consumers: for each cargo the building sends out, the three closest industries and towns that use it.\n- The arrow button on a row draws one cargo-flow arrow on the map and moves the camera so both ends are in view. The arrow is animated if that flow already runs, and faint if it doesn't yet. Arrows to or from a warehouse are always bright and static, because the game doesn't record which flows go through a warehouse.\n- Each cargo starts collapsed and shows the distance to its nearest match. Click it to expand.\n- The locate button moves the camera to a building, and clicking its name opens that building's window.\n\nDistances are measured in a straight line. Lists are worked out when the window opens. Cosmetic mod: achievements stay available, and you can add it to or remove it from existing saves.",
+    "localization": {
+        "de": {
+            "name": "Cargo Compass",
+            "summary": "Zeigt je Gut die nächsten Lieferanten und Abnehmer und einen einzelnen Güterfluss auf der Karte.",
+            "description": "(Früher Closest Consumer.) Klicke auf eine Industrie oder ein Lager: Cargo Compass fügt dem Fenster eine Karte hinzu, die zeigt, woher jedes Gut kommen und wohin es gehen kann.\n\n- Lieferanten: für jedes Eingangsgut die drei nächsten Industrien, die es produzieren, und die drei nächsten Lager, die es vorrätig haben.\n- Abnehmer: für jedes ausgehende Gut die drei nächsten Industrien und Städte, die es verwenden.\n- Die Pfeiltaste einer Zeile zeichnet einen Güterfluss-Pfeil auf die Karte, mit der Entfernung am Pfeil, und richtet die Kamera auf beide Enden aus. Der Pfeil ist animiert, wenn der Fluss schon läuft, sonst blass. Pfeile zu oder von Lagern sind immer hell und statisch.\n- Jedes Gut ist anfangs eingeklappt und zeigt die Entfernung zum nächsten Treffer.\n\nEntfernungen werden in Luftlinie gemessen. Kosmetischer Mod: Errungenschaften bleiben verfügbar."
+        },
+        "es": {
+            "name": "Cargo Compass",
+            "summary": "Muestra los proveedores y consumidores más cercanos de cada cargamento y un flujo en el mapa.",
+            "description": "(Antes Closest Consumer.) Haz clic en una industria o un almacén y Cargo Compass añade a su ventana una tarjeta que muestra de dónde puede venir y adónde puede ir cada cargamento.\n\n- Proveedores: para cada cargamento de entrada, las tres industrias más cercanas que lo producen y los tres almacenes más cercanos que lo tienen en existencia.\n- Consumidores: para cada cargamento que sale, las tres industrias y localidades más cercanas que lo usan.\n- El botón de flecha de una fila dibuja una flecha de flujo en el mapa, con la distancia, y encuadra ambos extremos. La flecha está animada si el flujo ya funciona y es tenue si no. Las flechas desde o hacia un almacén son siempre brillantes y estáticas.\n- Cada cargamento empieza plegado y muestra la distancia a la coincidencia más cercana.\n\nLas distancias son en línea recta. Mod cosmético: los logros siguen disponibles."
+        },
+        "fr": {
+            "name": "Cargo Compass",
+            "summary": "Les fournisseurs et consommateurs les plus proches de chaque fret, et un flux sur la carte.",
+            "description": "(Anciennement Closest Consumer.) Cliquez sur une industrie ou un entrepôt : Cargo Compass ajoute à sa fenêtre une carte qui montre d’où chaque fret peut venir et où il peut aller.\n\n- Fournisseurs : pour chaque fret d’entrée, les trois industries les plus proches qui le produisent et les trois entrepôts les plus proches qui l’ont en stock.\n- Consommateurs : pour chaque fret expédié, les trois industries et villes les plus proches qui l’utilisent.\n- Le bouton flèche d’une ligne trace une flèche de flux sur la carte, avec la distance, et cadre les deux extrémités. La flèche est animée si le flux existe déjà, pâle sinon. Les flèches depuis ou vers un entrepôt sont toujours vives et statiques.\n- Chaque fret est replié au départ et indique la distance de la correspondance la plus proche.\n\nLes distances sont à vol d’oiseau. Mod cosmétique : les succès restent disponibles."
+        },
+        "it": {
+            "name": "Cargo Compass",
+            "summary": "Elenca i fornitori e i consumatori più vicini per ogni carico e mostra un flusso sulla mappa.",
+            "description": "(Prima Closest Consumer.) Fai clic su un’industria o un magazzino e Cargo Compass aggiunge alla sua finestra una scheda che mostra da dove può arrivare e dove può andare ogni carico.\n\n- Fornitori: per ogni carico in ingresso, le tre industrie più vicine che lo producono e i tre magazzini più vicini che lo hanno in giacenza.\n- Consumatori: per ogni carico in uscita, le tre industrie e cittadine più vicine che lo usano.\n- Il pulsante freccia di una riga disegna una freccia di flusso sulla mappa, con la distanza, e inquadra entrambe le estremità. La freccia è animata se il flusso è già attivo, tenue altrimenti. Le frecce da o verso un magazzino sono sempre luminose e statiche.\n- Ogni carico parte compresso e mostra la distanza dalla corrispondenza più vicina.\n\nLe distanze sono in linea d’aria. Mod estetica: gli obiettivi restano disponibili."
+        },
+        "ja": {
+            "name": "Cargo Compass",
+            "summary": "貨物ごとに最寄りの供給者と消費者を一覧表示し、マップに1本の貨物フローを表示します。",
+            "description": "（旧 Closest Consumer）産業または貨物倉庫をクリックすると、各貨物がどこから来てどこへ行けるかを示すカードがウィンドウに追加されます。\n\n- 供給者：各入力貨物について、それを生産する最寄りの産業3つと、在庫を持つ最寄りの貨物倉庫3つ。\n- 消費者：送り出す各貨物について、それを使う最寄りの産業と町3つ。\n- 行の矢印ボタンでマップに距離付きの貨物フロー矢印を描き、両端が見えるようにカメラを動かします。すでに流れている場合は矢印が動き、そうでない場合は薄く表示されます。貨物倉庫との矢印は常に明るく静止しています。\n- 各貨物は折りたたまれた状態で始まり、最も近い候補までの距離を表示します。\n\n距離は直線距離です。見た目のみのMODで、実績は有効のままです。"
+        },
+        "ko": {
+            "name": "Cargo Compass",
+            "summary": "화물마다 가장 가까운 공급자와 소비자를 보여 주고 지도에 화물 흐름 하나를 표시합니다.",
+            "description": "(이전 이름 Closest Consumer) 산업이나 창고를 클릭하면 각 화물이 어디서 오고 어디로 갈 수 있는지 보여 주는 카드가 창에 추가됩니다.\n\n- 공급자: 각 투입 화물에 대해 그것을 생산하는 가장 가까운 산업 세 곳과 재고가 있는 가장 가까운 창고 세 곳.\n- 소비자: 내보내는 각 화물에 대해 그것을 사용하는 가장 가까운 산업과 마을 세 곳.\n- 행의 화살표 버튼은 거리가 표시된 화물 흐름 화살표를 지도에 그리고 양쪽 끝이 보이도록 카메라를 옮깁니다. 이미 흐름이 있으면 화살표가 움직이고, 없으면 흐리게 표시됩니다. 창고와 오가는 화살표는 항상 밝고 정지해 있습니다.\n- 각 화물은 접힌 상태로 시작하며 가장 가까운 대상까지의 거리를 보여 줍니다.\n\n거리는 직선 거리입니다. 외형 전용 모드라 업적이 유지됩니다."
+        },
+        "nl": {
+            "name": "Cargo Compass",
+            "summary": "Toont per vracht de dichtstbijzijnde leveranciers en klanten, en één vrachtstroom op de kaart.",
+            "description": "(Voorheen Closest Consumer.) Klik op een industrie of opslagplaats en Cargo Compass voegt een kaart aan het venster toe die laat zien waar elke vracht vandaan kan komen en heen kan gaan.\n\n- Leveranciers: voor elke invoervracht de drie dichtstbijzijnde industrieën die haar produceren en de drie dichtstbijzijnde opslagplaatsen die haar op voorraad hebben.\n- Klanten: voor elke uitgaande vracht de drie dichtstbijzijnde industrieën en steden die haar gebruiken.\n- De pijlknop van een rij tekent een vrachtstroompijl op de kaart, met de afstand, en brengt beide uiteinden in beeld. De pijl beweegt als de stroom al loopt en is anders vaag. Pijlen van of naar een opslagplaats zijn altijd helder en stil.\n- Elke vracht begint ingeklapt en toont de afstand tot de dichtstbijzijnde match.\n\nAfstanden zijn hemelsbreed. Cosmetische mod: prestaties blijven beschikbaar."
+        },
+        "pl": {
+            "name": "Cargo Compass",
+            "summary": "Pokazuje najbliższych dostawców i konsumentów każdego towaru oraz jeden przepływ na mapie.",
+            "description": "(Dawniej Closest Consumer.) Kliknij zakład lub magazyn, a Cargo Compass doda do jego okna kartę pokazującą, skąd każdy towar może przyjść i dokąd może trafić.\n\n- Dostawcy: dla każdego towaru wejściowego trzy najbliższe zakłady, które go produkują, i trzy najbliższe magazyny, które mają go na stanie.\n- Konsumenci: dla każdego wysyłanego towaru trzy najbliższe zakłady i miasta, które go używają.\n- Przycisk strzałki w wierszu rysuje na mapie strzałkę przepływu z odległością i ustawia kamerę tak, by widać było oba końce. Strzałka jest animowana, jeśli przepływ już działa, a w przeciwnym razie blada. Strzałki do lub z magazynu są zawsze jasne i nieruchome.\n- Każdy towar jest na początku zwinięty i pokazuje odległość do najbliższego dopasowania.\n\nOdległości są w linii prostej. Mod kosmetyczny: osiągnięcia pozostają dostępne."
+        },
+        "pt_BR": {
+            "name": "Cargo Compass",
+            "summary": "Lista os fornecedores e consumidores mais próximos de cada carga e mostra um fluxo no mapa.",
+            "description": "(Antes Closest Consumer.) Clique em uma indústria ou armazém e o Cargo Compass adiciona à janela um cartão que mostra de onde cada carga pode vir e para onde pode ir.\n\n- Fornecedores: para cada carga de entrada, as três indústrias mais próximas que a produzem e os três armazéns mais próximos que a têm em estoque.\n- Consumidores: para cada carga enviada, as três indústrias e municípios mais próximos que a usam.\n- O botão de seta de uma linha desenha uma seta de fluxo no mapa, com a distância, e enquadra as duas pontas. A seta é animada se o fluxo já existe e fraca se não. Setas de ou para um armazém são sempre brilhantes e estáticas.\n- Cada carga começa recolhida e mostra a distância até a correspondência mais próxima.\n\nAs distâncias são em linha reta. Mod cosmético: as conquistas continuam disponíveis."
+        },
+        "ru": {
+            "name": "Cargo Compass",
+            "summary": "Показывает ближайших поставщиков и потребителей каждого груза и один грузопоток на карте.",
+            "description": "(Ранее Closest Consumer.) Щёлкните по предприятию или складу, и Cargo Compass добавит в его окно карточку, показывающую, откуда может прийти и куда может уйти каждый груз.\n\n- Поставщики: для каждого входящего груза три ближайших предприятия, которые его производят, и три ближайших склада, где он есть в наличии.\n- Потребители: для каждого исходящего груза три ближайших предприятия и города, которые его используют.\n- Кнопка со стрелкой в строке рисует на карте стрелку грузопотока с расстоянием и наводит камеру на оба конца. Стрелка анимирована, если поток уже идёт, иначе бледная. Стрелки к складу или от него всегда яркие и неподвижные.\n- Каждый груз сначала свёрнут и показывает расстояние до ближайшего совпадения.\n\nРасстояния — по прямой. Косметический мод: достижения остаются доступными."
+        },
+        "zh_CN": {
+            "name": "Cargo Compass",
+            "summary": "列出每种货物最近的供应商和顾客，并在地图上显示一条货流。",
+            "description": "（原名 Closest Consumer）点击任意产业或仓库，Cargo Compass 会在其窗口中添加一张卡片，显示每种货物可以从哪里来、到哪里去。\n\n- 供应商：每种输入货物最近的三个生产它的产业，以及最近的三个有库存的仓库。\n- 顾客：每种输出货物最近的三个使用它的产业和城镇。\n- 行上的箭头按钮会在地图上绘制一条带距离的货流箭头，并移动镜头使两端都可见。如果该货流已在运行，箭头会动；否则显示为淡色。往返仓库的箭头总是明亮且静止。\n- 每种货物起初是折叠的，并显示到最近匹配的距离。\n\n距离为直线距离。仅改变外观：成就保持可用。"
+        },
+        "zh_TW": {
+            "name": "Cargo Compass",
+            "summary": "列出每種貨物最近的供應商與消費者，並在地圖上顯示一條貨物流動。",
+            "description": "（原名 Closest Consumer）點擊任一產業或貨物倉庫，Cargo Compass 會在其視窗中新增一張卡片，顯示每種貨物可以從哪裡來、到哪裡去。\n\n- 供應商：每種投入貨物最近的三個生產它的產業，以及最近的三個有庫存的貨物倉庫。\n- 消費者：每種產出貨物最近的三個使用它的產業與城鎮。\n- 列上的箭頭按鈕會在地圖上繪製一條附距離的貨物流動箭頭，並移動鏡頭讓兩端都可見。若該流動已在運作，箭頭會移動；否則顯示為淡色。往返貨物倉庫的箭頭總是明亮且靜止。\n- 每種貨物起初為摺疊狀態，並顯示到最近相符項的距離。\n\n距離為直線距離。僅改變外觀：成就保持可用。"
+        }
+    },
     "tags": [
         "Script Mod"
     ],

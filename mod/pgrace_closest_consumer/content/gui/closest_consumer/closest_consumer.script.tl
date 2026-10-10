@@ -130,6 +130,16 @@ local function makeLabel(text : string, class : string) : TreeNodeId
 end
 
 -- Styled like the base industry window's consumer arrows.
+-- A distance in the player's language and units ("2,2 km" in German, miles if chosen): the game's formatter, with
+-- our plain one as the fallback should the call fail.
+local function formatDistance(metres : number) : string
+	local ok, text = pcall(api.util.formatLength, metres)
+	if ok and text ~= nil then
+		return text as string
+	end
+	return rank.formatDistance(metres)
+end
+
 local function planarDistance(a : Vec3f, b : Vec3f) : number
 	local dx, dy = b.x - a.x, b.y - a.y
 	return math.sqrt(dx * dx + dy * dy)
@@ -275,7 +285,7 @@ local FlowAction = react.RegisterRecipe("ClosestConsumerFlowAction", function(pa
 				local count = cargo_util.getCargoFlowCount(selection.from, selection.to, selection.cargoType, selection.toIsTown)
 				style = count > 0 and "Actual" or "Potential"
 			end
-			local text = rank.formatDistance(planarDistance(from, to))
+			local text = formatDistance(planarDistance(from, to))
 			action = selector_react_util.makeDefaultSelectorAction(params.gameCtx, makeFlowLayerConfig(from, to, selection.cargoType, style),
 				nil, function() : TreeNodeId
 					return builtin.FullScreenComponent{
@@ -354,7 +364,7 @@ local function makeFlowRow(entry : ClosestConsumerRank.Ranked, flow : Selection,
 				end,
 			},
 			line_react_util.makeEntityWindowButton(label, entry.entity),
-			builtin.TextView{ text = rank.formatDistance(entry.distance) },
+			builtin.TextView{ text = formatDistance(entry.distance) },
 		},
 	}
 end
@@ -377,7 +387,7 @@ local function makeCargoHeader(cargoType : CargoTypeId, nearestDistance : number
 				},
 				cargo_react_util.makeCargoIcon(cargoType),
 				builtin.TextView{ text = cargo_util.getCargoNameById(cargoType) },
-				nearestDistance ~= nil and builtin.TextView{ text = rank.formatDistance(nearestDistance) } or nil,
+				nearestDistance ~= nil and builtin.TextView{ text = formatDistance(nearestDistance) } or nil,
 			},
 		},
 		onClick = fold.toggle,
